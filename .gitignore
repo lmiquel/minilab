@@ -1,0 +1,14 @@
+# Secrets
+.env
+wireguard/config/
+
+# Node
+bot/node_modules/
+bot/dist/
+
+# Build
+ragnarok/rathena/
+
+# Backups locaux
+*.sql.gz
+*.tar.gz

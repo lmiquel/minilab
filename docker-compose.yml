@@ -1,0 +1,194 @@
+version: "3.9"
+
+networks:
+  minilab:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  ragnarok_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/ssd/ragnarok
+  valheim_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/ssd/valheim
+
+services:
+
+  # ─────────────────────────────────────────
+  #  Pi-hole (DNS + bloqueur de pub)
+  # ─────────────────────────────────────────
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    environment:
+      - TZ=Europe/Paris
+      - WEBPASSWORD=${PIHOLE_PASSWORD}
+      - PIHOLE_DNS_=1.1.1.1;1.0.0.1      # DNS upstream (Cloudflare)
+      - DNSSEC=true
+      - DNSMASQ_LISTENING=all
+      - VIRTUAL_HOST=pihole.minilab
+    volumes:
+      - /mnt/ssd/pihole/etc:/etc/pihole
+      - /mnt/ssd/pihole/dnsmasq:/etc/dnsmasq.d
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8080:80/tcp"        # Interface web Pi-hole → http://IP_DU_PI:8080/admin
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.3
+
+  # ─────────────────────────────────────────
+  #  WireGuard VPN
+  # ─────────────────────────────────────────
+  wireguard:
+    image: linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - SERVERURL=${WG_SERVER_URL}        # ex: mon-ddns.duckdns.org
+      - SERVERPORT=51820
+      - PEERS=${WG_PEERS}                 # ex: alice,bob,charlie
+      - PEERDNS=172.20.0.3               # ← Pi-hole comme DNS pour les peers VPN
+      - INTERNAL_SUBNET=10.13.13.0
+      - ALLOWEDIPS=10.13.13.0/24,172.20.0.0/24
+    volumes:
+      - /mnt/ssd/wireguard/config:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "51820:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    depends_on:
+      - pihole
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.2
+
+  # ─────────────────────────────────────────
+  #  Ragnarok Online — Base de données MariaDB
+  # ─────────────────────────────────────────
+  ragnarok-db:
+    image: mariadb:10.11
+    container_name: ragnarok-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${RO_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ragnarok
+      MYSQL_USER: ragnarok
+      MYSQL_PASSWORD: ${RO_DB_PASSWORD}
+    volumes:
+      - /mnt/ssd/ragnarok/mysql:/var/lib/mysql
+      - ./ragnarok/sql-files:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  #  Ragnarok Online — Serveur rAthena
+  # ─────────────────────────────────────────
+  ragnarok:
+    build:
+      context: ./ragnarok
+      dockerfile: Dockerfile
+    container_name: ragnarok
+    depends_on:
+      ragnarok-db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=ragnarok-db
+      - DB_USER=ragnarok
+      - DB_PASSWORD=${RO_DB_PASSWORD}
+      - DB_NAME=ragnarok
+      - SERVER_NAME=${RO_SERVER_NAME:-minilab-ro}
+      - INTER_SERVER_IP=172.20.0.12
+    volumes:
+      - ragnarok_data:/opt/ragnarok/data
+      - ./ragnarok/conf:/opt/ragnarok/conf:ro
+    ports:
+      - "6900:6900"    # login-server
+      - "6121:6121"    # char-server
+      - "5121:5121"    # map-server
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.12
+    labels:
+      - "minilab.service=ragnarok"
+
+  # ─────────────────────────────────────────
+  #  Valheim
+  # ─────────────────────────────────────────
+  valheim:
+    image: lloesche/valheim-server:latest
+    container_name: valheim
+    cap_add:
+      - sys_nice
+    environment:
+      - SERVER_NAME=${VALHEIM_SERVER_NAME:-minilab-valheim}
+      - WORLD_NAME=${VALHEIM_WORLD_NAME:-minilab}
+      - SERVER_PASS=${VALHEIM_PASSWORD}
+      - SERVER_PUBLIC=false
+      - BACKUPS=true
+      - BACKUPS_CRON=0 2 * * *
+      - BACKUPS_DIRECTORY=/opt/valheim/backups
+      - BACKUPS_MAX_AGE=7
+      - TZ=Europe/Paris
+    volumes:
+      - valheim_data:/opt/valheim
+      - /mnt/ssd/valheim/backups:/opt/valheim/backups
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.20
+    labels:
+      - "minilab.service=valheim"
+
+  # ─────────────────────────────────────────
+  #  minilab-helper (Bot Discord)
+  # ─────────────────────────────────────────
+  minilab-helper:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: minilab-helper
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
+      - TZ=Europe/Paris
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      - ragnarok
+      - valheim
