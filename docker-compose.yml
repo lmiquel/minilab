@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   minilab:
     driver: bridge
@@ -143,23 +141,23 @@ services:
   #  Valheim
   # ─────────────────────────────────────────
   valheim:
-    image: lloesche/valheim-server:latest
+    image: tsxcloud/valheim-arm:arm64
     container_name: valheim
     cap_add:
       - sys_nice
     environment:
+      # tsxcloud/valheim-arm utilise les mêmes variables que lloesche
+      # mais SERVER_PUBLIC attend 0/1 au lieu de true/false
       - SERVER_NAME=${VALHEIM_SERVER_NAME:-minilab-valheim}
       - WORLD_NAME=${VALHEIM_WORLD_NAME:-minilab}
       - SERVER_PASS=${VALHEIM_PASSWORD}
-      - SERVER_PUBLIC=false
-      - BACKUPS=true
-      - BACKUPS_CRON=0 2 * * *
-      - BACKUPS_DIRECTORY=/opt/valheim/backups
-      - BACKUPS_MAX_AGE=7
+      - SERVER_PUBLIC=0
+      - UPDATE=enabled             # Mise à jour auto du serveur au démarrage
+      - SAVE_INTERVAL=1800         # Sauvegarde toutes les 30 minutes
       - TZ=Europe/Paris
     volumes:
-      - valheim_data:/opt/valheim
-      - /mnt/ssd/valheim/backups:/opt/valheim/backups
+      - valheim_data:/data
+      - /mnt/ssd/valheim/backups:/data/backups
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"
