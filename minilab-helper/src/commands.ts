@@ -22,7 +22,7 @@ const OWNER_ID = process.env.DISCORD_OWNER_ID!;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SERVICE_CHOICES = [
-  { name: "⚔️  Ragnarok Online", value: "ragnarok" },
+  // { name: "⚔️  Ragnarok Online", value: "ragnarok" },
   { name: "🛡️  Valheim",         value: "valheim"  },
   { name: "🔵  Pi-hole (DNS)",    value: "pihole"   },
 ] as const;
@@ -143,7 +143,7 @@ export function setupCommandHandler(client: Client, monitor: MonitorService): vo
 
 function serviceEmoji(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
-    ragnarok: "⚔️",
+    // ragnarok: "⚔️",
     valheim:  "🛡️",
     pihole:   "🔵",
   };
@@ -152,7 +152,7 @@ function serviceEmoji(service: ServiceName): string {
 
 function serviceLabel(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
-    ragnarok: "Ragnarok Online",
+    // ragnarok: "Ragnarok Online",
     valheim:  "Valheim",
     pihole:   "Pi-hole",
   };
@@ -296,7 +296,7 @@ async function handleShutdown(
   );
 
   // Arrêt dans l'ordre : jeux d'abord, puis Pi-hole en dernier
-  for (const service of (["ragnarok", "valheim", "pihole"] as ServiceName[])) {
+  for (const service of ([/* "ragnarok", */ "valheim", "pihole"] as ServiceName[])) {
     try {
       await dockerManager.stopService(service);
       console.log(`[Shutdown] ${service} arrêté.`);
