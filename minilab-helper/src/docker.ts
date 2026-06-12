@@ -1,6 +1,6 @@
 import Dockerode from "dockerode";
 
-export type ServiceName = "ragnarok" | "valheim" | "pihole";
+export type ServiceName = /* "ragnarok" | */ "valheim" | "pihole";
 
 export interface ContainerStatus {
   name: ServiceName;
@@ -19,17 +19,17 @@ export interface ResourceUsage {
 
 // Map service → container name (doit correspondre aux container_name du docker-compose)
 const SERVICE_CONTAINERS: Record<ServiceName, string> = {
-  ragnarok: "ragnarok",
+  // ragnarok: "ragnarok",
   valheim: "valheim",
   pihole: "pihole",
 };
 
 // Services qu'on peut stopper/démarrer manuellement via Discord
 // ragnarok-db est géré implicitement par l'arrêt de ragnarok
-export const CONTROLLABLE_SERVICES: ServiceName[] = ["ragnarok", "valheim", "pihole"];
+export const CONTROLLABLE_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
 
 // Tous les services surveillés par le monitor
-export const MONITORED_SERVICES: ServiceName[] = ["ragnarok", "valheim", "pihole"];
+export const MONITORED_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
 
 class DockerManager {
   private docker: Dockerode;
