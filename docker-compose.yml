@@ -84,58 +84,58 @@ services:
   # ─────────────────────────────────────────
   #  Ragnarok Online — Base de données MariaDB
   # ─────────────────────────────────────────
-  ragnarok-db:
-    image: mariadb:10.11
-    container_name: ragnarok-db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${RO_DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ragnarok
-      MYSQL_USER: ragnarok
-      MYSQL_PASSWORD: ${RO_DB_PASSWORD}
-    volumes:
-      - /mnt/ssd/ragnarok/mysql:/var/lib/mysql
-      - ./ragnarok/sql-files:/docker-entrypoint-initdb.d:ro
-    restart: unless-stopped
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.10
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+  #ragnarok-db:
+  #  image: mariadb:10.11
+  #  container_name: ragnarok-db
+  #  environment:
+  #    MYSQL_ROOT_PASSWORD: ${RO_DB_ROOT_PASSWORD}
+  #    MYSQL_DATABASE: ragnarok
+  #    MYSQL_USER: ragnarok
+  #    MYSQL_PASSWORD: ${RO_DB_PASSWORD}
+  #  volumes:
+  #    - /mnt/ssd/ragnarok/mysql:/var/lib/mysql
+  #    - ./ragnarok/sql-files:/docker-entrypoint-initdb.d:ro
+  #  restart: unless-stopped
+  #  networks:
+  #    minilab:
+  #      ipv4_address: 172.20.0.10
+  #  healthcheck:
+  #    test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+  #    interval: 30s
+  #    timeout: 10s
+  #    retries: 5
 
   # ─────────────────────────────────────────
   #  Ragnarok Online — Serveur rAthena
   # ─────────────────────────────────────────
-  ragnarok:
-    build:
-      context: ./ragnarok
-      dockerfile: Dockerfile
-    container_name: ragnarok
-    depends_on:
-      ragnarok-db:
-        condition: service_healthy
-    environment:
-      - DB_HOST=ragnarok-db
-      - DB_USER=ragnarok
-      - DB_PASSWORD=${RO_DB_PASSWORD}
-      - DB_NAME=ragnarok
-      - SERVER_NAME=${RO_SERVER_NAME:-minilab-ro}
-      - INTER_SERVER_IP=172.20.0.12
-    volumes:
-      - ragnarok_data:/opt/ragnarok/data
-      - ./ragnarok/conf:/opt/ragnarok/conf:ro
-    ports:
-      - "6900:6900"    # login-server
-      - "6121:6121"    # char-server
-      - "5121:5121"    # map-server
-    restart: unless-stopped
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.12
-    labels:
-      - "minilab.service=ragnarok"
+  #ragnarok:
+  #  build:
+  #    context: ./ragnarok
+  #    dockerfile: Dockerfile
+  #  container_name: ragnarok
+  #  depends_on:
+  #    ragnarok-db:
+  #      condition: service_healthy
+  #  environment:
+  #    - DB_HOST=ragnarok-db
+  #    - DB_USER=ragnarok
+  #    - DB_PASSWORD=${RO_DB_PASSWORD}
+  #    - DB_NAME=ragnarok
+  #    - SERVER_NAME=${RO_SERVER_NAME:-minilab-ro}
+  #    - INTER_SERVER_IP=172.20.0.12
+  #  volumes:
+  #    - ragnarok_data:/opt/ragnarok/data
+  #    - ./ragnarok/conf:/opt/ragnarok/conf:ro
+  #  ports:
+  #    - "6900:6900"    # login-server
+  #    - "6121:6121"    # char-server
+  #    - "5121:5121"    # map-server
+  #  restart: unless-stopped
+  #  networks:
+  #    minilab:
+  #      ipv4_address: 172.20.0.12
+  #  labels:
+  #    - "minilab.service=ragnarok"
 
   # ─────────────────────────────────────────
   #  Valheim
