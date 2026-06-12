@@ -177,9 +177,7 @@ services:
       context: ./minilab-helper
       dockerfile: Dockerfile
       args:
-        # GID du groupe docker sur l'hôte — récupéré dynamiquement
-        # Si ça échoue, vérifie avec : stat -c '%g' /var/run/docker.sock
-        DOCKER_GID: ${DOCKER_GID:-998}
+        DOCKER_GID: ${DOCKER_GID}
     container_name: minilab-helper
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
