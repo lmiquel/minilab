@@ -7,7 +7,7 @@
 set -e
 
 # ── Variables à renseigner ────────────────────────────────────────────────────
-SERVER_URL=$(grep WG_SERVER_URL ~/minilab/.env 2>/dev/null | cut -d= -f2)
+SERVER_URL=$(grep WG_SERVER_URL ~/minilab/.env)
 if [ -z "$SERVER_URL" ]; then
   echo "Erreur : WG_SERVER_URL non trouvé dans ~/minilab/.env"
   exit 1
