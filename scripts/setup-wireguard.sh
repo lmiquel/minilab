@@ -19,7 +19,7 @@ CONFIG_DIR="/etc/wireguard"
 PEERS_DIR="/mnt/ssd/wireguard/peers"
 
 # Récupère les peers depuis le .env du projet
-PEERS_RAW=$(grep WG_PEERS ~/minilab/.env 2>/dev/null | cut -d= -f2)
+PEERS_RAW=$(grep WG_PEERS /.env 2>/dev/null | cut -d= -f2)
 if [ -z "$PEERS_RAW" ]; then
   echo "Erreur : WG_PEERS non trouvé dans ~/minilab/.env"
   echo "Exemple : WG_PEERS=alice,bob,charlie"
