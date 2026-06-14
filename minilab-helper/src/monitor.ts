@@ -135,7 +135,7 @@ export class MonitorService {
 
   private serviceEmoji(service: ServiceName): string {
     const emojis: Record<ServiceName, string> = {
-      ragnarok: "⚔️",
+      // ragnarok: "⚔️",
       valheim: "🛡️",
       pihole: "🔵",
     };
