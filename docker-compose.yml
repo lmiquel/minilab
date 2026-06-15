@@ -94,7 +94,7 @@ services:
       - SAVE_INTERVAL=1800
       - TZ=Europe/Paris
     volumes:
-      - /mnt/ssd/valheim:/data
+      - /mnt/ssd/valheim:/root/.config/unity3d/IronGate/Valheim
       - /mnt/ssd/valheim/backups:/data/backups
     ports:
       - "2456:2456/udp"
