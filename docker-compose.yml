@@ -96,7 +96,7 @@ services:
     environment:
       - SERVER_NAME=${VALHEIM_SERVER_NAME}
       - WORLD_NAME=${VALHEIM_WORLD_NAME}
-      - SERVER_PASS=${VALHEIM_PASSWORD}
+      - SERVER_PASSWORD=${VALHEIM_PASSWORD}
       - SERVER_PUBLIC=0
       - UPDATE=enabled
       - SAVE_INTERVAL=1800
