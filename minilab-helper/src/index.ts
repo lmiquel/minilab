@@ -4,7 +4,7 @@ import { MonitorService } from "./monitor";
 import { setupCommandHandler, registerCommands } from "./commands";
 import { startWireGuardWatcher, loadPeerNames } from "./wireguard";
 
-const REQUIRED_ENV = ["DISCORD_TOKEN", "DISCORD_OWNER_ID"];
+const REQUIRED_ENV = ["DISCORD_TOKEN", "DISCORD_OWNER_ID", "WG_PEERS"];
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
     console.error(`[Bot] Variable d'environnement manquante : ${key}`);
@@ -14,7 +14,7 @@ for (const key of REQUIRED_ENV) {
 
 const TOKEN = process.env.DISCORD_TOKEN!;
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
-const WG_PEERS = process.env.WG_PEERS!;
+const PEERS = process.env.WG_PEERS!;
 
 const client = new Client({
   intents: [
@@ -39,8 +39,8 @@ client.once("ready", async (readyClient) => {
   await monitor.init();
 
   // Chargement des noms de peers WireGuard
-  const peers = (WG_PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
-  console.log(WG_PEERS)
+  const peers = (PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  console.log(PEERS)
   console.log(peers)
   if (peers.length > 0) {
     await loadPeerNames(peers);
