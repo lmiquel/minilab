@@ -68,7 +68,7 @@ services:
       - SERVERURL=${WG_SERVER_URL}
       - SERVERPORT=51820
       - PEERS=${WG_PEERS}
-      - PEERDNS=172.20.0.3
+      - PEERDNS=auto
       - INTERNAL_SUBNET=10.13.13.0
       - ALLOWEDIPS=0.0.0.0/0
       - PERSISTENTKEEPALIVE_PEERS=all
@@ -76,6 +76,8 @@ services:
     volumes:
       - /mnt/ssd/wireguard/config:/config
       - /lib/modules:/lib/modules:ro
+    ports:
+      - "51820:51820/udp"
     restart: unless-stopped
     depends_on:
       - pihole
@@ -127,4 +129,3 @@ services:
         ipv4_address: 172.20.0.30
     depends_on:
       - valheim
-      - pihole
