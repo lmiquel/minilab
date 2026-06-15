@@ -24,7 +24,7 @@ const OWNER_ID = process.env.DISCORD_OWNER_ID!;
 const SERVICE_CHOICES = [
   // { name: "⚔️  Ragnarok Online", value: "ragnarok" },
   { name: "🛡️  Valheim",         value: "valheim"  },
-  { name: "🔵  Pi-hole (DNS)",    value: "pihole"   },
+  // { name: "🔵  Pi-hole (DNS)",    value: "pihole"   },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ function serviceEmoji(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
     // ragnarok: "⚔️",
     valheim:  "🛡️",
-    pihole:   "🔵",
+    // pihole:   "🔵",
   };
   return map[service];
 }
@@ -154,7 +154,7 @@ function serviceLabel(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
     // ragnarok: "Ragnarok Online",
     valheim:  "Valheim",
-    pihole:   "Pi-hole",
+    // pihole:   "Pi-hole",
   };
   return map[service];
 }
