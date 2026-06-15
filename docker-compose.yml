@@ -70,7 +70,7 @@ services:
       - PEERS=${WG_PEERS}
       - PEERDNS=172.20.0.3
       - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=0.0.0.0/0
+      - ALLOWEDIPS=10.13.13.0/24
       - PERSISTENTKEEPALIVE_PEERS=all
       - LOG_CONFS=true
     volumes:
