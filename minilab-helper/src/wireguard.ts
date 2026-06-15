@@ -43,13 +43,11 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     });
     const stream = await exec.start({ hijack: true, stdin: false });
     
-    const output = await new Promise<string>((resolve) => {
+    output = await new Promise<string>((resolve) => {
       let data = "";
       stream.on("data", (chunk: Buffer) => data += chunk.toString());
       stream.on("end", () => resolve(data));
     });
-    const { stdout } = await execAsync("docker exec wireguard wg show wg0 latest-handshakes 2>/dev/null");
-    output = stdout;
   } catch (err) {
     console.error("[WG] Erreur exec:", err);
     return;
