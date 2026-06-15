@@ -2,9 +2,14 @@ import { MonitorService } from "./monitor";
 import { dockerManager } from "./docker";
 
 const WG_POLL_INTERVAL_MS = 15_000;
+const WG_PEER_TIMEOUT_MS = 5 * 60 * 1000; // 5 min sans handshake = déconnecté
 
-const seenHandshakes = new Map<string, number>();
-const peerNames = new Map<string, string>(); // pubkey → nom
+const seenHandshakes = new Map<string, number>(); // pubkey → timestamp dernier handshake
+const connectedPeers = new Set<string>();          // pubkeys actuellement connectés
+const peerNames = new Map<string, string>();        // pubkey → nom
+
+// Les streams Docker multiplexés contiennent un header de 8 bytes à nettoyer
+const cleanOutput = (s: string) => s.replace(/[\x00-\x08\x0e-\x1f]/g, "").trim();
 
 export async function loadPeerNames(peers: string[]): Promise<void> {
   let output: string;
@@ -17,7 +22,7 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
 
   // `wg show wg0 peers` retourne une pubkey par ligne, dans le même ordre que wg0.conf
   // ce qui correspond à l'ordre de WG_PEERS
-  const pubkeys = output.trim().split("\n").filter(Boolean);
+  const pubkeys = cleanOutput(output).split("\n").filter(Boolean);
 
   if (pubkeys.length !== peers.length) {
     console.warn(
@@ -26,8 +31,9 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
   }
 
   for (let i = 0; i < Math.min(pubkeys.length, peers.length); i++) {
-    peerNames.set(pubkeys[i].trim(), peers[i]);
-    console.log(`[WG] Peer mappé: ${peers[i]} → ${pubkeys[i].trim().slice(0, 10)}…`);
+    const pubkey = cleanOutput(pubkeys[i]);
+    peerNames.set(pubkey, peers[i]);
+    console.log(`[WG] Peer mappé: ${peers[i]} → ${pubkey.slice(0, 10)}…`);
   }
 }
 
@@ -45,7 +51,8 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     return;
   }
 
-  const lines = output.trim().split("\n").filter(Boolean);
+  const now = Date.now();
+  const lines = cleanOutput(output).split("\n").filter(Boolean);
 
   for (const line of lines) {
     const parts = line.split(/\s+/);
@@ -55,20 +62,30 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     const ts = parseInt(tsStr, 10);
     if (!ts || ts === 0) continue; // Pas encore de handshake
 
-    const prev = seenHandshakes.get(pubkey) ?? 0;
-    if (ts > prev) {
-      seenHandshakes.set(pubkey, ts);
+    const peerName = peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`;
+    const date = new Date(ts * 1000).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
 
-      const peerName = peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`;
-      const date = new Date(ts * 1000).toLocaleString("fr-FR", {
-        timeZone: "Europe/Paris",
-      });
+    const wasConnected = connectedPeers.has(pubkey);
+    const isConnected = now - ts * 1000 < WG_PEER_TIMEOUT_MS;
 
+    if (isConnected && !wasConnected) {
+      // Nouvelle connexion
+      connectedPeers.add(pubkey);
       await monitor.dm(
         `🔐 **Connexion VPN détectée**\n` +
         `👤 Peer : **${peerName}**\n` +
         `🕐 Heure : ${date}`
       );
+    } else if (!isConnected && wasConnected) {
+      // Déconnexion
+      connectedPeers.delete(pubkey);
+      await monitor.dm(
+        `🔌 **Déconnexion VPN**\n` +
+        `👤 Peer : **${peerName}**\n` +
+        `🕐 Heure : ${date}`
+      );
     }
+
+    seenHandshakes.set(pubkey, ts);
   }
 }
