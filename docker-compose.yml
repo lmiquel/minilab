@@ -120,6 +120,7 @@ services:
       - TZ=Europe/Paris
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /usr/bin/docker:/usr/bin/docker:ro
     restart: unless-stopped
     networks:
       minilab:
