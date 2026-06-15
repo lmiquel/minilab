@@ -52,6 +52,7 @@ mkdir -p \
   "$MOUNT_POINT/valheim/backups" \
   "$MOUNT_POINT/pihole/etc" \
   "$MOUNT_POINT/pihole/dnsmasq" \
+  "$MOUNT_POINT/duckdns/config" \
   "$MOUNT_POINT/wireguard/config"
 
 # Droits pour Docker (uid 1000 = utilisateur standard)
