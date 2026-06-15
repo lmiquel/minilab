@@ -70,6 +70,7 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
       seenHandshakes.set(pubkey, ts);
 
       const peerName = peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`;
+      console.log(peerNames)
       const date = new Date(ts * 1000).toLocaleString("fr-FR", {
         timeZone: "Europe/Paris",
       });
