@@ -66,7 +66,7 @@ services:
       - TZ=Europe/Paris
       - SERVERURL=${WG_SERVER_URL}
       - SERVERPORT=51820
-      - PEERS=30
+      - PEERS=${WG_PEERS}
       - PEERDNS=auto
       - INTERNAL_SUBNET=10.13.13.0
       - ALLOWEDIPS=0.0.0.0/0
