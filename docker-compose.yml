@@ -56,8 +56,6 @@ services:
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
-    depends_on:
-      - pihole
 
   valheim:
     image: tsxcloud/valheim-arm:arm64

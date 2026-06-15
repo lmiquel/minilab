@@ -1,6 +1,6 @@
 # Secrets
 .env
-wireguard/config/
+peer-configs/
 
 # Node
 bot/node_modules/
