@@ -4,10 +4,6 @@ import { MonitorService } from "./monitor";
 import { setupCommandHandler, registerCommands } from "./commands";
 import { startWireGuardWatcher, loadPeerNames } from "./wireguard";
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Validation des variables d'environnement
-// ─────────────────────────────────────────────────────────────────────────────
-
 const REQUIRED_ENV = ["DISCORD_TOKEN", "DISCORD_OWNER_ID"];
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
@@ -19,20 +15,12 @@ for (const key of REQUIRED_ENV) {
 const TOKEN = process.env.DISCORD_TOKEN!;
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Initialisation du client Discord
-// ─────────────────────────────────────────────────────────────────────────────
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.DirectMessages,
   ],
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Démarrage
-// ─────────────────────────────────────────────────────────────────────────────
 
 const monitor = new MonitorService(client);
 

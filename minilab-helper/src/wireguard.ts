@@ -33,7 +33,7 @@ export function startWireGuardWatcher(monitor: MonitorService): void {
 async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> {
   let output: string;
   try {
-    const { stdout } = await execAsync("wg show wireguard0 latest-handshakes 2>/dev/null");
+    const { stdout } = await execAsync("wg show wg0 latest-handshakes 2>/dev/null");
     output = stdout;
   } catch {
     // WireGuard non accessible depuis ce conteneur (mode dégradé)
