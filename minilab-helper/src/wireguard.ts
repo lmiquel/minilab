@@ -35,8 +35,8 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
   try {
     const { stdout } = await execAsync("docker exec wireguard wg show wg0 latest-handshakes 2>/dev/null");
     output = stdout;
-  } catch {
-    // WireGuard non accessible depuis ce conteneur (mode dégradé)
+  } catch (err) {
+    console.error("[WG] Erreur exec:", err);
     return;
   }
 
