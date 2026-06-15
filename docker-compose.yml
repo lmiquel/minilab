@@ -33,6 +33,7 @@ services:
   wireguard:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
+    network_mode: host
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
