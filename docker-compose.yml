@@ -66,7 +66,6 @@ services:
       - PEERS=${WG_PEERS}                 # ex: alice,bob,charlie
       - PEERDNS=172.20.0.3               # ← Pi-hole comme DNS pour les peers VPN
       - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=10.13.13.0/24,172.20.0.0/24
     volumes:
       - /mnt/ssd/wireguard/config:/config
       - /lib/modules:/lib/modules:ro
