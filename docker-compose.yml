@@ -117,6 +117,7 @@ services:
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
+      - WG_PEERS=${WG_PEERS}
       - TZ=Europe/Paris
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
