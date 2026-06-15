@@ -38,8 +38,20 @@ class DockerManager {
     this.docker = new Dockerode({ socketPath: "/var/run/docker.sock" });
   }
 
-  async getWireguardContainer(): Promise<any> {
-    return this.docker.getContainer("wireguard");
+  /** Exécute une commande dans le conteneur WireGuard et retourne le stdout */
+  async execInWireguard(cmd: string[]): Promise<string> {
+    const container = this.docker.getContainer("wireguard");
+    const exec = await container.exec({
+      Cmd: cmd,
+      AttachStdout: true,
+      AttachStderr: false,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    return new Promise<string>((resolve) => {
+      let data = "";
+      stream.on("data", (chunk: Buffer) => (data += chunk.toString()));
+      stream.on("end", () => resolve(data));
+    });
   }
 
   /** Renvoie le statut d'un conteneur */

@@ -40,7 +40,7 @@ client.once("ready", async (readyClient) => {
   // Chargement des noms de peers WireGuard
   const peers = (process.env.WG_PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
   if (peers.length > 0) {
-    loadPeerNames(peers);
+    await loadPeerNames(peers);
   }
 
   // Démarrage des services de fond
