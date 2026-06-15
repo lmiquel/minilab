@@ -38,6 +38,10 @@ class DockerManager {
     this.docker = new Dockerode({ socketPath: "/var/run/docker.sock" });
   }
 
+  async getWireguardContainer(): Promise<any> {
+    return this.docker.getContainer("wireguard");
+  }
+
   /** Renvoie le statut d'un conteneur */
   async getStatus(service: ServiceName): Promise<ContainerStatus> {
     const containerName = SERVICE_CONTAINERS[service];

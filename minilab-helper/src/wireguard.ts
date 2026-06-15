@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import { MonitorService } from "./monitor";
+import { dockerManager } from "./docker";
 
 const execAsync = promisify(exec);
 
@@ -33,6 +34,20 @@ export function startWireGuardWatcher(monitor: MonitorService): void {
 async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> {
   let output: string;
   try {
+    const wireguardContainer = await dockerManager.getWireguardContainer();
+
+    const exec = await wireguardContainer.exec({
+      Cmd: ["wg", "show", "wg0", "latest-handshakes"],
+      AttachStdout: true,
+      AttachStderr: false,
+    });
+    const stream = await exec.start({ hijack: true, stdin: false });
+    
+    const output = await new Promise<string>((resolve) => {
+      let data = "";
+      stream.on("data", (chunk: Buffer) => data += chunk.toString());
+      stream.on("end", () => resolve(data));
+    });
     const { stdout } = await execAsync("docker exec wireguard wg show wg0 latest-handshakes 2>/dev/null");
     output = stdout;
   } catch (err) {
