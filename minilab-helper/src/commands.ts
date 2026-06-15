@@ -24,7 +24,7 @@ const OWNER_ID = process.env.DISCORD_OWNER_ID!;
 const SERVICE_CHOICES = [
   // { name: "⚔️  Ragnarok Online", value: "ragnarok" },
   { name: "🛡️  Valheim",         value: "valheim"  },
-  // { name: "🔵  Pi-hole (DNS)",    value: "pihole"   },
+  { name: "🔵  Pi-hole (DNS)",    value: "pihole"   },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ function serviceEmoji(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
     // ragnarok: "⚔️",
     valheim:  "🛡️",
-    // pihole:   "🔵",
+    pihole:   "🔵",
   };
   return map[service];
 }
@@ -154,7 +154,7 @@ function serviceLabel(service: ServiceName): string {
   const map: Record<ServiceName, string> = {
     // ragnarok: "Ragnarok Online",
     valheim:  "Valheim",
-    // pihole:   "Pi-hole",
+    pihole:   "Pi-hole",
   };
   return map[service];
 }
@@ -194,12 +194,12 @@ async function handleStop(
   await interaction.deferReply({ ephemeral: true });
 
   // Avertissement si on coupe Pi-hole (le DNS tombera pour les peers VPN)
-  /* if (service === "pihole") {
+  if (service === "pihole") {
     await interaction.followUp({
       content: "⚠️ Arrêter Pi-hole coupera le DNS pour tous les peers VPN connectés.",
       ephemeral: true,
     });
-  } */
+  }
 
   await dockerManager.stopService(service);
 
@@ -296,7 +296,7 @@ async function handleShutdown(
   );
 
   // Arrêt dans l'ordre : jeux d'abord, puis Pi-hole en dernier
-  for (const service of ([/* "ragnarok", */ "valheim", /* "pihole" */] as ServiceName[])) {
+  for (const service of ([/* "ragnarok", */ "valheim", "pihole"] as ServiceName[])) {
     try {
       await dockerManager.stopService(service);
       console.log(`[Shutdown] ${service} arrêté.`);
