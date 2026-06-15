@@ -14,6 +14,7 @@ for (const key of REQUIRED_ENV) {
 
 const TOKEN = process.env.DISCORD_TOKEN!;
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
+const WG_PEERS = process.env.WG_PEERS!;
 
 const client = new Client({
   intents: [
@@ -38,7 +39,9 @@ client.once("ready", async (readyClient) => {
   await monitor.init();
 
   // Chargement des noms de peers WireGuard
-  const peers = (process.env.WG_PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  const peers = (WG_PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  console.log(WG_PEERS)
+  console.log(peers)
   if (peers.length > 0) {
     await loadPeerNames(peers);
   }
