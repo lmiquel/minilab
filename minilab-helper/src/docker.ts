@@ -26,10 +26,10 @@ const SERVICE_CONTAINERS: Record<ServiceName, string> = {
 
 // Services qu'on peut stopper/démarrer manuellement via Discord
 // ragnarok-db est géré implicitement par l'arrêt de ragnarok
-export const CONTROLLABLE_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
+export const CONTROLLABLE_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", /* "pihole" */];
 
 // Tous les services surveillés par le monitor
-export const MONITORED_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
+export const MONITORED_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", /* "pihole" */];
 
 class DockerManager {
   private docker: Dockerode;
