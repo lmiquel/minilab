@@ -1,6 +1,8 @@
 import Dockerode from "dockerode";
+import { ServiceName, SERVICES } from "./services-docker";
 
-export type ServiceName = /* "ragnarok" | */ "valheim" | "pihole";
+export type { ServiceName };
+export { MONITORED_SERVICES, CONTROLLABLE_SERVICES } from "./services-docker";
 
 export interface ContainerStatus {
   name: ServiceName;
@@ -17,20 +19,6 @@ export interface ResourceUsage {
   memPercent: number;
 }
 
-// Map service → container name (doit correspondre aux container_name du docker-compose)
-const SERVICE_CONTAINERS: Record<ServiceName, string> = {
-  // ragnarok: "ragnarok",
-  valheim: "valheim",
-  pihole: "pihole",
-};
-
-// Services qu'on peut stopper/démarrer manuellement via Discord
-// ragnarok-db est géré implicitement par l'arrêt de ragnarok
-export const CONTROLLABLE_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
-
-// Tous les services surveillés par le monitor
-export const MONITORED_SERVICES: ServiceName[] = [/* "ragnarok", */ "valheim", "pihole"];
-
 class DockerManager {
   private docker: Dockerode;
 
@@ -40,7 +28,7 @@ class DockerManager {
 
   /** Exécute une commande dans le conteneur WireGuard et retourne le stdout */
   async execInWireguard(cmd: string[]): Promise<string> {
-    const container = this.docker.getContainer("wireguard");
+    const container = this.docker.getContainer(SERVICES.wireguard.containerName);
     const exec = await container.exec({
       Cmd: cmd,
       AttachStdout: true,
@@ -56,8 +44,7 @@ class DockerManager {
 
   /** Renvoie le statut d'un conteneur */
   async getStatus(service: ServiceName): Promise<ContainerStatus> {
-    const containerName = SERVICE_CONTAINERS[service];
-    const container = this.docker.getContainer(containerName);
+    const container = this.docker.getContainer(SERVICES[service].containerName);
     const info = await container.inspect();
 
     return {
@@ -71,30 +58,31 @@ class DockerManager {
 
   /** Renvoie le statut de tous les services surveillés */
   async getAllStatuses(): Promise<ContainerStatus[]> {
+    const { MONITORED_SERVICES } = await import("./services-docker");
     return Promise.all(MONITORED_SERVICES.map((s) => this.getStatus(s)));
   }
 
   /** Arrête proprement un service */
   async stopService(service: ServiceName): Promise<void> {
-    const container = this.docker.getContainer(SERVICE_CONTAINERS[service]);
+    const container = this.docker.getContainer(SERVICES[service].containerName);
     await container.stop({ t: 10 });
   }
 
   /** Démarre un service */
   async startService(service: ServiceName): Promise<void> {
-    const container = this.docker.getContainer(SERVICE_CONTAINERS[service]);
+    const container = this.docker.getContainer(SERVICES[service].containerName);
     await container.start();
   }
 
   /** Redémarre un service */
   async restartService(service: ServiceName): Promise<void> {
-    const container = this.docker.getContainer(SERVICE_CONTAINERS[service]);
+    const container = this.docker.getContainer(SERVICES[service].containerName);
     await container.restart({ t: 10 });
   }
 
   /** Récupère les stats CPU/RAM (snapshot instantané) */
   async getResourceUsage(service: ServiceName): Promise<ResourceUsage> {
-    const container = this.docker.getContainer(SERVICE_CONTAINERS[service]);
+    const container = this.docker.getContainer(SERVICES[service].containerName);
 
     return new Promise((resolve, reject) => {
       container.stats({ stream: false }, (err: Error | null, data: any) => {

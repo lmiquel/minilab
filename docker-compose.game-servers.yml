@@ -1,0 +1,31 @@
+networks:
+  minilab:
+    external: true
+
+services:
+  valheim:
+    image: tsxcloud/valheim-arm:arm64
+    container_name: valheim
+    cap_add:
+      - sys_nice
+    environment:
+      - SERVER_NAME=${VALHEIM_SERVER_NAME}
+      - WORLD_NAME=${VALHEIM_WORLD_NAME}
+      - SERVER_PASSWORD=${VALHEIM_PASSWORD}
+      - SERVER_PUBLIC=0
+      - UPDATE=enabled
+      - SAVE_INTERVAL=1800
+      - TZ=Europe/Paris
+    volumes:
+      - /mnt/ssd/valheim:/root/.config/unity3d/IronGate/Valheim
+      - /mnt/ssd/valheim/backups:/data/backups
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.20
+    labels:
+      - "minilab.service=valheim"

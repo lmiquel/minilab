@@ -1,0 +1,82 @@
+networks:
+  minilab:
+    name: minilab
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - UPDATE_IP=ipv4
+      - LOG_FILE=false
+    volumes:
+      - /mnt/ssd/duckdns/config:/config
+    restart: unless-stopped
+
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    environment:
+      - TZ=Europe/Paris
+      - WEBPASSWORD=${PIHOLE_PASSWORD}
+      - PIHOLE_DNS_=1.1.1.1;1.0.0.1
+      - DNSSEC=true
+      - DNSMASQ_LISTENING=all
+      - VIRTUAL_HOST=pihole.minilab
+    volumes:
+      - /mnt/ssd/pihole/etc:/etc/pihole
+      - /mnt/ssd/pihole/dnsmasq:/etc/dnsmasq.d
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8080:80/tcp"
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.3
+
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - SERVERURL=${WG_SERVER_URL}
+      - SERVERPORT=51820
+      - PEERS=${WG_PEERS}
+      - PEERDNS=172.20.0.3
+      - INTERNAL_SUBNET=10.13.13.0
+      - ALLOWEDIPS=0.0.0.0/0
+      - PERSISTENTKEEPALIVE_PEERS=all
+      - LOG_CONFS=true
+    volumes:
+      - /mnt/ssd/wireguard/config:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "51820:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.10
+    depends_on:
+      - pihole
+      - duckdns
