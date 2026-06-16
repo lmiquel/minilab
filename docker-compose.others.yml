@@ -1,7 +1,3 @@
-networks:
-  minilab:
-    external: true
-
 services:
    mariadb:
      image: lscr.io/linuxserver/mariadb:latest

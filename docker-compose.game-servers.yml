@@ -1,7 +1,3 @@
-networks:
-  minilab:
-    external: true
-
 services:
   valheim:
     image: tsxcloud/valheim-arm:arm64
