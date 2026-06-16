@@ -62,6 +62,7 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     const ts = parseInt(tsStr, 10);
     if (!ts || ts === 0) continue; // Pas encore de handshake
 
+    console.log(pubkey)
     const peerName = peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`;
     const date = new Date(ts * 1000).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
 
