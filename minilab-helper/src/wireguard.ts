@@ -92,12 +92,12 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
       connectedPeers.add(pubkey);
       seenHandshakes.set(pubkey, ts);
       await monitor.dm(
-        `🟢 *Connexion VPN détectée de* **[${peerName}]** *(${date})*`
+        `🟢 *Connexion VPN détectée :* **${peerName}** [${date}]`
       );
     } else if (!isConnected && wasConnected) {
       connectedPeers.delete(pubkey);
       await monitor.dm(
-        `🔴 *Déconnexion VPN de* **[${peerName}]** *(${date})*`
+        `🔴 *Déconnexion VPN :* **${peerName}** [${date}]`
       );
     } else {
       // Mise à jour silencieuse du timestamp même sans changement d'état
