@@ -11,6 +11,22 @@ const peerNames = new Map<string, string>();        // pubkey → nom
 // Les streams Docker multiplexés contiennent un header de 8 bytes à nettoyer
 const cleanOutput = (s: string) => s.replace(/[\x00-\x08\x0e-\x1f\ufffd]/g, "").trim();
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  API publique
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Retourne la liste des peers actuellement connectés, utilisable par /vpn */
+export function getConnectedPeers(): { name: string; since: Date }[] {
+  return Array.from(connectedPeers).map((pubkey) => ({
+    name: peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`,
+    since: new Date((seenHandshakes.get(pubkey) ?? 0) * 1000),
+  }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Chargement des noms de peers
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function loadPeerNames(peers: string[]): Promise<void> {
   let output: string;
   try {
@@ -36,6 +52,10 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
     console.log(`[WG] Peer mappé: ${peers[i]} → ${pubkey.slice(0, 10)}…`);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Watcher
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function startWireGuardWatcher(monitor: MonitorService): void {
   setInterval(() => checkWireGuardHandshakes(monitor), WG_POLL_INTERVAL_MS);
@@ -70,16 +90,18 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
 
     if (isConnected && !wasConnected) {
       connectedPeers.add(pubkey);
+      seenHandshakes.set(pubkey, ts);
       await monitor.dm(
-        `🟢 *Connexion VPN détectée :* **${peerName}** [${date}]`
+        `🟢 *Connexion VPN détectée de* **[${peerName}]** *(${date})*`
       );
     } else if (!isConnected && wasConnected) {
       connectedPeers.delete(pubkey);
       await monitor.dm(
-        `🔴 *Déconnexion VPN :* **${peerName}** [${date}]`
+        `🔴 *Déconnexion VPN de* **[${peerName}]** *(${date})*`
       );
+    } else {
+      // Mise à jour silencieuse du timestamp même sans changement d'état
+      seenHandshakes.set(pubkey, ts);
     }
-
-    seenHandshakes.set(pubkey, ts);
   }
 }

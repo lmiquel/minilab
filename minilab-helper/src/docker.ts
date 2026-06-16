@@ -97,7 +97,8 @@ class DockerManager {
         const cpuPercent =
           systemDelta > 0 ? (cpuDelta / systemDelta) * numCpus * 100 : 0;
 
-        const memUsage = data.memory_stats.usage || 0;
+        // ← Correction : soustraction du cache pour la vraie RAM utilisée
+        const memUsage = (data.memory_stats.usage || 0) - (data.memory_stats.stats?.inactive_file || 0);
         const memLimit = data.memory_stats.limit || 1;
 
         resolve({
@@ -108,6 +109,13 @@ class DockerManager {
         });
       });
     });
+  }
+
+  /** Lit la température du RPi en °C */
+  async getRpiTemperature(): Promise<number> {
+    const fs = await import("fs/promises");
+    const raw = await fs.readFile("/sys/class/thermal/thermal_zone0/temp", "utf-8");
+    return Math.round(parseInt(raw.trim(), 10) / 1000);
   }
 
   /** Vérifie si Docker répond */

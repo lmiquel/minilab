@@ -18,6 +18,7 @@ import {
   MONITORED_SERVICES,
   toDiscordChoices,
 } from "./services-docker";
+import { getConnectedPeers } from "./wireguard";
 
 const execAsync = promisify(exec);
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
@@ -56,7 +57,11 @@ export const commands = [
 
   new SlashCommandBuilder()
     .setName("resources")
-    .setDescription("Affiche la consommation CPU/RAM de tous les services"),
+    .setDescription("Affiche la consommation CPU/RAM et la température du RPi"),
+
+  new SlashCommandBuilder()
+    .setName("vpn")
+    .setDescription("Affiche les peers WireGuard actuellement connectés"),
 
   new SlashCommandBuilder()
     .setName("shutdown")
@@ -101,6 +106,7 @@ export function setupCommandHandler(client: Client, monitor: MonitorService): vo
         case "start":     await handleStart(interaction, monitor);    break;
         case "restart":   await handleRestart(interaction, monitor);  break;
         case "resources": await handleResources(interaction);         break;
+        case "vpn":       await handleVpn(interaction);               break;
         case "shutdown":  await handleShutdown(interaction, monitor); break;
       }
     } catch (err) {
@@ -183,6 +189,15 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
     .setColor(Colors.Green)
     .setTimestamp();
 
+  // Température RPi
+  try {
+    const temp = await dockerManager.getRpiTemperature();
+    const tempEmoji = temp >= 70 ? "🔴" : temp >= 60 ? "🟡" : "🟢";
+    embed.setDescription(`🌡️ Température RPi : ${tempEmoji} **${temp}°C**`);
+  } catch {
+    embed.setDescription("🌡️ Température RPi : ❌ indisponible");
+  }
+
   for (const service of MONITORED_SERVICES) {
     const { emoji, label } = SERVICES[service];
     try {
@@ -199,6 +214,31 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
         name: `${emoji} ${label}`,
         value: "❌ Stats indisponibles (conteneur arrêté ?)",
         inline: true,
+      });
+    }
+  }
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
+async function handleVpn(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  const peers = getConnectedPeers();
+  const embed = new EmbedBuilder()
+    .setTitle("🔒 Peers VPN connectés")
+    .setColor(peers.length > 0 ? Colors.Green : Colors.Grey)
+    .setTimestamp();
+
+  if (peers.length === 0) {
+    embed.setDescription("Aucun peer connecté actuellement.");
+  } else {
+    for (const peer of peers) {
+      const since = peer.since.toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+      embed.addFields({
+        name: `🟢 ${peer.name}`,
+        value: `Dernier handshake : \`${since}\``,
+        inline: false,
       });
     }
   }
