@@ -72,13 +72,13 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
       // Nouvelle connexion
       connectedPeers.add(pubkey);
       await monitor.dm(
-        `🟢 *Connexion VPN détectée de *${peerName}* (${date})*`
+        `🟢 *Connexion VPN détectée de* **[${peerName}]** *(${date})*`
       );
     } else if (!isConnected && wasConnected) {
       // Déconnexion
       connectedPeers.delete(pubkey);
       await monitor.dm(
-        `🔴 *Déconnexion VPN de *${peerName}* (${date})*`
+        `🔴 *Déconnexion VPN de* **[${peerName}]** *(${date})*`
       );
     }
 
