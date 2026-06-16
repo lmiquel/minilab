@@ -11,9 +11,6 @@ services:
        - PGID=1000
        - TZ=Europe/Paris
        - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-       - MYSQL_DATABASE=${MARIADB_DATABASE}
-       - MYSQL_USER=${MARIADB_USER}
-       - MYSQL_PASSWORD=${MARIADB_PASSWORD}
      volumes:
        - /mnt/ssd/mariadb/config:/config
      restart: unless-stopped
