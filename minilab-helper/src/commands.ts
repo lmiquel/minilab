@@ -202,6 +202,9 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
     const { emoji, label } = SERVICES[service];
     try {
       const res = await dockerManager.getResourceUsage(service);
+      console.log('----------------------------------------------------------');
+      console.log(res);
+      console.log('----------------------------------------------------------')
       embed.addFields({
         name: `${emoji} ${label}`,
         value:
