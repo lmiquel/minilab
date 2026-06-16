@@ -9,7 +9,7 @@ const connectedPeers = new Set<string>();          // pubkeys actuellement conne
 const peerNames = new Map<string, string>();        // pubkey → nom
 
 // Les streams Docker multiplexés contiennent un header de 8 bytes à nettoyer
-const cleanOutput = (s: string) => s.replace(/[\x00-\x08\x0e-\x1f]/g, "").trim();
+const cleanOutput = (s: string) => s.replace(/[\x00-\x08\x0e-\x1f\ufffd]/g, "").trim();
 
 export async function loadPeerNames(peers: string[]): Promise<void> {
   let output: string;
@@ -62,7 +62,6 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     const ts = parseInt(tsStr, 10);
     if (!ts || ts === 0) continue; // Pas encore de handshake
 
-    console.log(pubkey)
     const peerName = peerNames.get(pubkey) ?? `clé inconnue ${pubkey.slice(0, 10)}…`;
     const date = new Date(ts * 1000).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
 
