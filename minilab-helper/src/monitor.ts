@@ -61,8 +61,8 @@ export class MonitorService {
     } catch (err) {
       console.error("[Monitor] Erreur Docker:", err);
       await this.dm(
-        "⚠️ **Impossible de joindre le daemon Docker !**\n" +
-        "Le monitoring est partiellement aveugle."
+        "⚠️ **Une erreur docker est survenue !**\n" +
+        `**${err}**`
       );
       return;
     }

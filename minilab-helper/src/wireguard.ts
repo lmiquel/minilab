@@ -15,9 +15,6 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
   let output: string;
   try {
     output = await dockerManager.execInWireguard(["wg", "show", "wg0", "peers"]);
-    console.log("[WG] Raw output length:", output.length);
-    console.log("[WG] Raw output bytes:", Buffer.from(output).slice(0, 20).toString("hex"));
-    console.log("[WG] Raw output:", JSON.stringify(output));
   } catch (err) {
     console.error("[WG] Impossible de récupérer les peers WireGuard:", err);
     return;
@@ -75,17 +72,13 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
       // Nouvelle connexion
       connectedPeers.add(pubkey);
       await monitor.dm(
-        `🔐 **Connexion VPN détectée**\n` +
-        `👤 Peer : **${peerName}**\n` +
-        `🕐 Heure : ${date}`
+        `🟢 *Connexion VPN détectée de *${peerName}* (${date})*`
       );
     } else if (!isConnected && wasConnected) {
       // Déconnexion
       connectedPeers.delete(pubkey);
       await monitor.dm(
-        `🔌 **Déconnexion VPN**\n` +
-        `👤 Peer : **${peerName}**\n` +
-        `🕐 Heure : ${date}`
+        `🔴 *Déconnexion VPN de *${peerName}* (${date})*`
       );
     }
 

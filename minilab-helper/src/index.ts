@@ -40,8 +40,6 @@ client.once("ready", async (readyClient) => {
 
   // Chargement des noms de peers WireGuard
   const peers = (PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
-  console.log(PEERS)
-  console.log(peers)
   if (peers.length > 0) {
     await loadPeerNames(peers);
   }
