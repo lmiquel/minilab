@@ -15,7 +15,6 @@ export interface ContainerStatus {
 export interface ResourceUsage {
   cpuPercent: number;
   memUsageMB: number;
-  memLimitMB: number;
   memPercent: number;
 }
 
@@ -88,6 +87,10 @@ class DockerManager {
       container.stats({ stream: false }, (err: Error | null, data: any) => {
         if (err) return reject(err);
 
+        console.log('----------------------------------------------------------');
+        console.log(data);
+        console.log('----------------------------------------------------------')
+
         const cpuDelta =
           data.cpu_stats.cpu_usage.total_usage -
           data.precpu_stats.cpu_usage.total_usage;
@@ -104,7 +107,6 @@ class DockerManager {
         resolve({
           cpuPercent: Math.round(cpuPercent * 10) / 10,
           memUsageMB: Math.round(memUsage / 1024 / 1024),
-          memLimitMB: Math.round(memLimit / 1024 / 1024),
           memPercent: Math.round((memUsage / memLimit) * 100 * 10) / 10,
         });
       });
