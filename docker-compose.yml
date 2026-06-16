@@ -1,3 +1,11 @@
+networks:
+  minilab:
+    name: minilab
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
 include:
   - path: ./docker-compose.network.yml
   - path: ./docker-compose.game-servers.yml
