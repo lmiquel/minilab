@@ -29,6 +29,15 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  ragnarok: {
+    containerName: "ragnarok",
+    label:         "Ragnarok Online",
+    emoji:         "⚔️",
+    category:      "game",
+    controllable:  true,
+    monitored:     true,
+  },
+
   mariadb: {
     containerName: "mariadb",
     label:         "MariaDB",
