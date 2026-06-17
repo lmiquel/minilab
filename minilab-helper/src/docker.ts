@@ -86,11 +86,7 @@ class DockerManager {
     return new Promise((resolve, reject) => {
       container.stats({ stream: false }, (err: Error | null, data: any) => {
         if (err) return reject(err);
-
-        console.log('----------------------------------------------------------');
-        console.log(data);
-        console.log('----------------------------------------------------------')
-
+        
         const cpuDelta =
           data.cpu_stats.cpu_usage.total_usage -
           data.precpu_stats.cpu_usage.total_usage;
