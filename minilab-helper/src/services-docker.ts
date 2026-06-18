@@ -29,6 +29,15 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  cobblemon: {
+    containerName: "cobblemon",
+    label:         "Cobblemon",
+    emoji:         "🐦‍🔥",
+    category:      "game",
+    controllable:  true,
+    monitored:     true,
+  },
+
   ragnarok: {
     containerName: "ragnarok",
     label:         "Ragnarok Online",
