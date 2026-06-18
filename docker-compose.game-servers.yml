@@ -30,6 +30,38 @@ services:
     labels:
       - "minilab.service=valheim"
 
+  cobblemon:
+    image: itzg/minecraft-server:latest
+    container_name: cobblemon
+    tty: true
+    stdin_open: true
+    environment:
+      - UID=1000
+      - GID=1000
+      - EULA=TRUE
+      - TZ=Europe/Paris
+      - TYPE=FABRIC
+      - MOD_PLATFORM=MODRINTH
+      - MODRINTH_MODPACK=cobblemon-fabric
+      - MODRINTH_LOADER=fabric
+      - INIT_MEMORY=2G
+      - MAX_MEMORY=5G
+      - DIFFICULTY=normal
+      - MOTD=${COBBLEMON_MOTD}
+      - MAX_PLAYERS=3
+      - PVP=FALSE
+      - SERVER_NAME=${COBBLEMON_SERVER_NAME}
+    volumes:
+      - /mnt/ssd/cobblemon:/data
+    ports:
+      - "25565:25565/tcp"
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.22
+    labels:
+      - "minilab.service=cobblemon"
+
   ragnarok:
     build:
       context: ./ragnarok
