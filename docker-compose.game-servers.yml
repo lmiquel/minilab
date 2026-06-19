@@ -31,7 +31,7 @@ services:
       - "minilab.service=valheim"
 
   cobblemon:
-    image: itzg/minecraft-server:latest
+    image: itzg/minecraft-server:java21
     container_name: cobblemon
     tty: true
     stdin_open: true
