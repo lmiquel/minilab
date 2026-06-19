@@ -8,6 +8,7 @@ bot/dist/
 
 # Build
 ragnarok/rathena/
+*.zip
 
 # Backups locaux
 *.sql.gz

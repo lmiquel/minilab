@@ -56,6 +56,15 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  minilabhelper: {
+    containerName: "minilab-helper",
+    label:         "Minilab Helper",
+    emoji:         "🤖",
+    category:      "other",
+    controllable:  false,
+    monitored:     true,
+  },
+
   wireguard: {
     containerName: "wireguard",
     label:         "WireGuard",
