@@ -21,7 +21,7 @@ services:
     container_name: pingvin-share
     environment:
       - TZ=Europe/Paris
-      - BACKEND_URL=https://${CLOUDFLARE_PINGVIN_HOSTNAME}
+      - BACKEND_URL=https://${PINGVIN_HOSTNAME}
     volumes:
       - /mnt/ssd/pingvin/data:/opt/app/backend/data
       - /mnt/ssd/pingvin/images:/opt/app/frontend/public/img

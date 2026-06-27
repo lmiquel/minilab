@@ -82,7 +82,7 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate --url http://${PINGVIN_PRIVATE_URL}
     environment:
       - TZ=Europe/Paris
     restart: unless-stopped
