@@ -21,6 +21,7 @@ services:
     container_name: pingvin-share
     environment:
       - TZ=Europe/Paris
+      - BACKEND_URL=https://${CLOUDFLARE_PINGVIN_HOSTNAME}
     volumes:
       - /mnt/ssd/pingvin/data:/opt/app/backend/data
       - /mnt/ssd/pingvin/images:/opt/app/frontend/public/img
@@ -30,7 +31,7 @@ services:
         ipv4_address: 172.20.0.41
     labels:
       - "minilab.service=pingvin-share"
-        
+
   minilab-helper:
     build:
       context: ./minilab-helper

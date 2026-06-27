@@ -78,3 +78,16 @@ services:
       - duckdns
     labels:
       - "minilab.service=wireguard"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    environment:
+      - TZ=Europe/Paris
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.11
+    labels:
+      - "minilab.service=cloudflared"
