@@ -83,6 +83,15 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  cloudflared: {
+    containerName: "cloudflared",
+    label:         "Cloudflared",
+    emoji:         "☁️",
+    category:      "network",
+    controllable:  false,
+    monitored:     true,
+  },
+
   duckdns: {
     containerName: "duckdns",
     label:         "DuckDNS",
