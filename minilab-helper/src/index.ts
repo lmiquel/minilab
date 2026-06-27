@@ -52,7 +52,7 @@ client.once("ready", async (readyClient) => {
   await monitor.dm(
     "✅ **minilab-helper démarré !**\n" +
     "Utilise `/status` pour voir l'état des serveurs.\n" +
-    "Commandes disponibles : `/status` `/stop` `/start` `/restart` `/resources` `/shutdown`"
+    "Commandes disponibles : `/status` `/vpn` `/resources` `/stop` `/start` `/restart` `/shutdown`"
   );
 });
 

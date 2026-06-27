@@ -61,29 +61,3 @@ services:
         ipv4_address: 172.20.0.22
     labels:
       - "minilab.service=cobblemon"
-
-#  ragnarok:
-#    build:
-#      context: ./ragnarok
-#      dockerfile: Dockerfile
-#    container_name: ragnarok
-#    environment:
-#      - DB_HOST=mariadb
-#      - DB_PORT=3306
-#      - DB_USER=${RO_DB_USER}
-#      - DB_PASSWORD=${RO_DB_PASSWORD}
-#      - DB_NAME=${RO_DB_NAME}
-#      - SERVER_NAME=${RO_SERVER_NAME}
-#      - TZ=Europe/Paris
-#    ports:
-#      - "6900:6900/tcp"
-#      - "6121:6121/tcp"
-#      - "5121:5121/tcp"
-#    restart: unless-stopped
-#    networks:
-#      minilab:
-#        ipv4_address: 172.20.0.21
-#    depends_on:
-#      - mariadb
-#    labels:
-#      - "minilab.service=ragnarok"
