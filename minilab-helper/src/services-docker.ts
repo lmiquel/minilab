@@ -1,4 +1,4 @@
-export type ServiceCategory = "game" | "network" | "other";
+export type ServiceCategory = "game" | "network" | "utils";
 
 export interface ServiceDefinition {
   /** Nom du conteneur Docker (doit correspondre au container_name du compose) */
@@ -51,8 +51,17 @@ export const SERVICES = {
     containerName: "mariadb",
     label:         "MariaDB",
     emoji:         "🦭",
-    category:      "other",
-    controllable:  false,
+    category:      "utils",
+    controllable:  true,
+    monitored:     true,
+  },
+
+  pingvinshare: {
+    containerName: "pingvin-share",
+    label:         "Pingvin Share",
+    emoji:         "🐧",
+    category:      "utils",
+    controllable:  true,
     monitored:     true,
   },
 
@@ -60,7 +69,7 @@ export const SERVICES = {
     containerName: "minilab-helper",
     label:         "Minilab Helper",
     emoji:         "🤖",
-    category:      "other",
+    category:      "utils",
     controllable:  false,
     monitored:     true,
   },

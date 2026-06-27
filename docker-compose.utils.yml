@@ -1,0 +1,55 @@
+services:
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - /mnt/ssd/mariadb/config:/config
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.40
+    labels:
+      - "minilab.service=mariadb"
+
+  pingvin-share:
+    image: smp46/pingvin-share-x:latest
+    container_name: pingvin-share
+    environment:
+      - TZ=Europe/Paris
+    volumes:
+      - /mnt/ssd/pingvin/data:/opt/app/backend/data
+      - /mnt/ssd/pingvin/images:/opt/app/frontend/public/img
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.41
+    labels:
+      - "minilab.service=pingvin-share"
+        
+  minilab-helper:
+    build:
+      context: ./minilab-helper
+      dockerfile: Dockerfile
+      args:
+        DOCKER_GID: ${DOCKER_GID}
+    container_name: minilab-helper
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
+      - WG_PEERS=${WG_PEERS}
+      - TZ=Europe/Paris
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.30
+    labels:
+      - "minilab.service=minilab-helper"

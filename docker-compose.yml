@@ -9,26 +9,4 @@ networks:
 include:
   - path: ./docker-compose.network.yml
   - path: ./docker-compose.game-servers.yml
-  - path: ./docker-compose.others.yml
-
-services:
-  minilab-helper:
-    build:
-      context: ./minilab-helper
-      dockerfile: Dockerfile
-      args:
-        DOCKER_GID: ${DOCKER_GID}
-    container_name: minilab-helper
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
-      - WG_PEERS=${WG_PEERS}
-      - TZ=Europe/Paris
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /usr/bin/docker:/usr/bin/docker:ro
-      - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
-    restart: unless-stopped
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.30
+  - path: ./docker-compose.utils.yml
