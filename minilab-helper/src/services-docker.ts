@@ -1,4 +1,4 @@
-export type ServiceCategory = "game" | "network" | "utils";
+export type ServiceCategory = "game" | "network" | "apps";
 
 export interface ServiceDefinition {
   /** Nom du conteneur Docker (doit correspondre au container_name du compose) */
@@ -14,6 +14,18 @@ export interface ServiceDefinition {
   /** Le service est surveillé par le monitor */
   monitored: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Ordre d'affichage des catégories
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const CATEGORY_ORDER: ServiceCategory[] = ["game", "apps", "network"];
+
+export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
+  game:    "🎮 Jeux",
+  apps:    "📦 Apps",
+  network: "🌐 Réseau",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Registre des services
@@ -42,7 +54,7 @@ export const SERVICES = {
     containerName: "mariadb",
     label:         "MariaDB",
     emoji:         "🦭",
-    category:      "utils",
+    category:      "apps",
     controllable:  true,
     monitored:     true,
   },
@@ -51,7 +63,7 @@ export const SERVICES = {
     containerName: "pingvin-share",
     label:         "Pingvin Share",
     emoji:         "🐧",
-    category:      "utils",
+    category:      "apps",
     controllable:  true,
     monitored:     true,
   },
@@ -60,7 +72,7 @@ export const SERVICES = {
     containerName: "minilab-helper",
     label:         "Minilab Helper",
     emoji:         "🤖",
-    category:      "utils",
+    category:      "apps",
     controllable:  false,
     monitored:     true,
   },
@@ -77,7 +89,7 @@ export const SERVICES = {
   pihole: {
     containerName: "pihole",
     label:         "Pi-hole",
-    emoji:         "🌐",
+    emoji:         "🕳️",
     category:      "network",
     controllable:  false,
     monitored:     true,
@@ -131,4 +143,19 @@ export function toDiscordChoices(services: ServiceName[]) {
     name: `${SERVICES[s].emoji}  ${SERVICES[s].label}`,
     value: s,
   }));
+}
+
+export function groupByCategory(services: ServiceName[]): Map<ServiceCategory, ServiceName[]> {
+  const map = new Map<ServiceCategory, ServiceName[]>();
+  for (const cat of CATEGORY_ORDER) map.set(cat, []);
+  for (const s of services) {
+    const cat = SERVICES[s].category;
+    map.get(cat)!.push(s);
+  }
+  
+  for (const [cat, list] of map) {
+    if (list.length === 0) map.delete(cat);
+  }
+
+  return map;
 }

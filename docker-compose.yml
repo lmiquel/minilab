@@ -9,4 +9,4 @@ networks:
 include:
   - path: ./docker-compose.network.yml
   - path: ./docker-compose.game-servers.yml
-  - path: ./docker-compose.utils.yml
+  - path: ./docker-compose.apps.yml

@@ -16,7 +16,9 @@ import {
   ALL_SERVICES,
   CONTROLLABLE_SERVICES,
   MONITORED_SERVICES,
+  CATEGORY_LABELS,
   toDiscordChoices,
+  groupByCategory,
 } from "./services-docker";
 import { getConnectedPeers } from "./wireguard";
 
@@ -126,17 +128,27 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
   await interaction.deferReply({ ephemeral: true });
 
   const statuses = await dockerManager.getAllStatuses();
+  const statusMap = new Map(statuses.map((s) => [s.name, s]));
+
   const embed = new EmbedBuilder()
     .setTitle("📊 Statut du minilab")
     .setColor(Colors.Blurple)
     .setTimestamp();
 
-  for (const s of statuses) {
-    const { emoji, label } = SERVICES[s.name];
-    const stateEmoji = s.state === "running" ? "🟢" : "🔴";
+  const grouped = groupByCategory(MONITORED_SERVICES);
+
+  for (const [cat, services] of grouped) {
+    const lines = services.map((s) => {
+      const status = statusMap.get(s);
+      const { emoji, label } = SERVICES[s];
+      if (!status) return `${emoji} **${label}** — ❓ inconnu`;
+      const stateEmoji = status.state === "running" ? "🟢" : "🔴";
+      return `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`  •  🔁 ${status.restartCount}`;
+    });
+
     embed.addFields({
-      name: `${emoji} ${label}`,
-      value: `${stateEmoji} \`${s.state}\`  •  Redémarrages : ${s.restartCount}`,
+      name: CATEGORY_LABELS[cat],
+      value: lines.join("\n"),
       inline: false,
     });
   }
@@ -198,23 +210,34 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
     embed.setDescription("🌡️ Température RPi : ❌ indisponible");
   }
 
-  for (const service of MONITORED_SERVICES) {
-    const { emoji, label } = SERVICES[service];
-    try {
-      const res = await dockerManager.getResourceUsage(service);
-      embed.addFields({
-        name: `${emoji} ${label}`,
-        value:
-          `CPU : \`${res.cpuPercent}%\`\n` +
-          `RAM : \`${res.memUsageMB}MB (${res.memPercent}%)\``,
-        inline: true,
-      });
-    } catch {
-      embed.addFields({
-        name: `${emoji} ${label}`,
-        value: "❌ Stats indisponibles (conteneur arrêté ?)",
-        inline: true,
-      });
+  const grouped = groupByCategory(MONITORED_SERVICES);
+
+  for (const [cat, services] of grouped) {
+    // Séparateur de catégorie (field vide avec juste le titre)
+    embed.addFields({
+      name: CATEGORY_LABELS[cat],
+      value: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      inline: false,
+    });
+
+    for (const service of services) {
+      const { emoji, label } = SERVICES[service];
+      try {
+        const res = await dockerManager.getResourceUsage(service);
+        embed.addFields({
+          name: `${emoji} ${label}`,
+          value:
+            `CPU : \`${res.cpuPercent}%\`\n` +
+            `RAM : \`${res.memUsageMB}MB (${res.memPercent}%)\``,
+          inline: true,
+        });
+      } catch {
+        embed.addFields({
+          name: `${emoji} ${label}`,
+          value: "❌ Stats indisponibles\n(conteneur arrêté ?)",
+          inline: true,
+        });
+      }
     }
   }
 
