@@ -109,7 +109,6 @@ services:
       - TZ=Europe/Paris
     restart: unless-stopped
     healthcheck:
-    healthcheck:
       test: ["CMD", "pgrep", "-x", "cloudflared"]
       interval: 30s
       timeout: 5s
