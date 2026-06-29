@@ -25,7 +25,7 @@ class DockerManager {
   private docker: Dockerode;
 
   constructor() {
-    const dockerHost = process.env.DOCKER_HOST;
+    const dockerHost = process.env.DOCKER_HOST as string;
     const url = new URL(dockerHost);
     this.docker = new Dockerode({ host: url.hostname, port: Number(url.port) || 2375 });
   }
