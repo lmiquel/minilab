@@ -23,17 +23,17 @@ interface ServiceState {
   lastRestartCount: number;
   alertedRestart: boolean;
 }
-
+ 
 export class MonitorService {
   private client: Client;
   private owner: User | null = null;
   private states = new Map<ServiceName, ServiceState>();
   private timer: NodeJS.Timeout | null = null;
-
+ 
   constructor(client: Client) {
     this.client = client;
   }
-
+ 
   async init(): Promise<void> {
     const ownerId = process.env.DISCORD_OWNER_ID!;
     try {
@@ -43,7 +43,7 @@ export class MonitorService {
       console.error("[Monitor] Impossible de récupérer l'owner Discord:", err);
     }
   }
-
+ 
   start(): void {
     console.log(
       "[Monitor] Démarrage du polling toutes les",
@@ -53,25 +53,25 @@ export class MonitorService {
     );
     this.timer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
     setTimeout(() => this.poll(), 5_000);
-
+ 
     // Récupération de l'URL du tunnel cloudflared en arrière-plan
     this.fetchAndNotifyCloudflaredUrl();
   }
-
+ 
   stop(): void {
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
   }
-
+ 
   // ─────────────────────────────────────────────────────────────────────────
   //  Cloudflared URL
   // ─────────────────────────────────────────────────────────────────────────
-
+ 
   private async fetchAndNotifyCloudflaredUrl(): Promise<void> {
     for (let attempt = 1; attempt <= CLOUDFLARE_URL_MAX_ATTEMPTS; attempt++) {
       try {
-        const logs = await dockerManager.exec("cloudflared", "cat /proc/1/fd/1");
+        const logs = await dockerManager.getLogs("cloudflared", 100);
         const match = logs.match(CLOUDFLARE_URL_REGEX);
-
+ 
         if (match) {
           await this.dm(`☁️ **Tunnel Cloudflare actif :**\n${match[0]}`);
           console.log(`[Monitor] URL cloudflared récupérée : ${match[0]}`);
@@ -80,20 +80,20 @@ export class MonitorService {
       } catch (err) {
         console.warn(`[Monitor] Tentative ${attempt}/${CLOUDFLARE_URL_MAX_ATTEMPTS} — cloudflared pas encore prêt:`, err);
       }
-
+ 
       if (attempt < CLOUDFLARE_URL_MAX_ATTEMPTS) {
         await new Promise((res) => setTimeout(res, CLOUDFLARE_URL_RETRY_DELAY_MS));
       }
     }
-
+ 
     console.error("[Monitor] Impossible de récupérer l'URL cloudflared après plusieurs tentatives.");
     await this.dm("☁️ **Tunnel Cloudflare :** URL introuvable dans les logs, vérifie manuellement.");
   }
-
+ 
   // ─────────────────────────────────────────────────────────────────────────
   //  Polling des statuts
   // ─────────────────────────────────────────────────────────────────────────
-
+ 
   private async poll(): Promise<void> {
     if (!this.owner) return;
     let statuses: ContainerStatus[];
@@ -106,11 +106,11 @@ export class MonitorService {
     }
     for (const status of statuses) await this.checkStatus(status);
   }
-
+ 
   private async checkStatus(status: ContainerStatus): Promise<void> {
     const prev = this.states.get(status.name);
     const { emoji, label } = SERVICES[status.name];
-
+ 
     if (!prev) {
       this.states.set(status.name, {
         lastState: status.state,
@@ -120,7 +120,7 @@ export class MonitorService {
       });
       return;
     }
-
+ 
     // ── Changement d'état (running / exited / …) ──────────────────────────
     if (prev.lastState !== status.state) {
       if (status.state !== "running") {
@@ -131,7 +131,7 @@ export class MonitorService {
         );
       } else if (prev.lastState !== "running") {
         await this.dm(`✅ **${label}** est de nouveau \`running\` (était \`${prev.lastState}\`)`);
-
+ 
         // Si cloudflared redémarre, on re-fetch la nouvelle URL du tunnel
         if (status.name === "cloudflared") {
           this.fetchAndNotifyCloudflaredUrl();
@@ -140,7 +140,7 @@ export class MonitorService {
       prev.lastState = status.state;
       prev.alertedRestart = false;
     }
-
+ 
     // ── Changement de santé (healthy / unhealthy / starting) ─────────────
     if (prev.lastHealth !== status.health && status.health !== "none") {
       const healthEmoji = HEALTH_EMOJI[status.health];
@@ -154,7 +154,7 @@ export class MonitorService {
       }
       prev.lastHealth = status.health;
     }
-
+ 
     // ── Boucle de crash ───────────────────────────────────────────────────
     if (
       status.restartCount > prev.lastRestartCount &&
@@ -171,7 +171,7 @@ export class MonitorService {
     prev.lastRestartCount = status.restartCount;
     this.states.set(status.name, prev);
   }
-
+ 
   async dm(message: string): Promise<void> {
     if (!this.owner) return;
     try {

@@ -1,3 +1,4 @@
+import * as DockerodeModule from "dockerode";
 import Dockerode from "dockerode";
 import { ServiceName, SERVICES } from "./services-docker";
 
@@ -34,7 +35,7 @@ class DockerManager {
    * Exécute une commande dans un conteneur et retourne le stdout.
    *
    * Le stream Docker exec est multiplexé (format 8-byte header par frame).
-   * On utilise Dockerode.demuxStream pour séparer stdout/stderr correctement,
+   * On utilise demuxStream pour séparer stdout/stderr correctement,
    * en accumulant les chunks dans des PassThrough streams — ce qui évite toute
    * corruption binaire liée à chunk.toString() sur des données non-UTF8.
    */
@@ -66,7 +67,32 @@ class DockerManager {
 
       // demuxStream gère le header 8-byte et route chaque frame vers
       // le bon PassThrough selon le stream_type (1=stdout, 2=stderr)
-      (Dockerode as any).demuxStream(stream, stdout, stderr);
+      (DockerodeModule as any).demuxStream(stream, stdout, stderr);
+    });
+  }
+
+  /**
+   * Retourne les logs récents d'un container sous forme de string.
+   * Utilise l'API Docker logs native — plus fiable que exec + cat.
+   */
+  async getLogs(service: ServiceName, tail = 50): Promise<string> {
+    const { PassThrough } = await import("stream");
+
+    const container = this.docker.getContainer(SERVICES[service].containerName);
+    const stream = await container.logs({ stdout: true, stderr: true, tail }) as any;
+
+    return new Promise<string>((resolve, reject) => {
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+
+      const chunks: Buffer[] = [];
+      stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stderr.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+      stream.on("error", reject);
+      stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+
+      (DockerodeModule as any).demuxStream(stream, stdout, stderr);
     });
   }
 
