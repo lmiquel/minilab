@@ -41,60 +41,43 @@ class DockerManager {
    */
   async exec(service: ServiceName, cmd: string): Promise<string> {
     const { PassThrough } = await import("stream");
-
+ 
     const container = this.docker.getContainer(SERVICES[service].containerName);
     const exec = await container.exec({
       Cmd: cmd.split(" "),
       AttachStdout: true,
       AttachStderr: true,
     });
-
+ 
     const stream = await exec.start({ hijack: true, stdin: false });
-
+ 
     return new Promise<string>((resolve, reject) => {
       const stdout = new PassThrough();
       const stderr = new PassThrough();
-
+ 
       const chunks: Buffer[] = [];
       stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-
+ 
       stream.on("error", reject);
       stdout.on("error", reject);
-
+ 
       stream.on("end", () => {
         resolve(Buffer.concat(chunks).toString("utf8"));
       });
-
-      // demuxStream gère le header 8-byte et route chaque frame vers
-      // le bon PassThrough selon le stream_type (1=stdout, 2=stderr)
-      (DockerodeModule as any).demuxStream(stream, stdout, stderr);
+ 
+      (container as any).modem.demuxStream(stream, stdout, stderr);
     });
   }
-
+ 
   /**
    * Retourne les logs récents d'un container sous forme de string.
-   * Utilise l'API Docker logs native — plus fiable que exec + cat.
    */
   async getLogs(service: ServiceName, tail = 50): Promise<string> {
-    const { PassThrough } = await import("stream");
-
     const container = this.docker.getContainer(SERVICES[service].containerName);
-    const stream = await container.logs({ stdout: true, stderr: true, tail }) as any;
-
-    return new Promise<string>((resolve, reject) => {
-      const stdout = new PassThrough();
-      const stderr = new PassThrough();
-
-      const chunks: Buffer[] = [];
-      stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-      stderr.on("data", (chunk: Buffer) => chunks.push(chunk));
-
-      stream.on("error", reject);
-      stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-
-      (DockerodeModule as any).demuxStream(stream, stdout, stderr);
-    });
+    const buffer = await container.logs({ stdout: true, stderr: true, tail }) as Buffer;
+    return buffer.toString("utf8");
   }
+
 
   /** Renvoie le statut d'un conteneur */
   async getStatus(service: ServiceName): Promise<ContainerStatus> {
