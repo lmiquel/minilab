@@ -1,4 +1,4 @@
-export type ServiceCategory = "game" | "network" | "apps";
+export type ServiceCategory = "game" | "network" | "apps" | "utils";
 
 export interface ServiceDefinition {
   /** Nom du conteneur Docker (doit correspondre au container_name du compose) */
@@ -19,11 +19,12 @@ export interface ServiceDefinition {
 //  Ordre d'affichage des catégories
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const CATEGORY_ORDER: ServiceCategory[] = ["game", "apps", "network"];
+export const CATEGORY_ORDER: ServiceCategory[] = ["game", "apps", "utils", "network"];
 
 export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   game:    "🎮 Jeux",
   apps:    "📦 Apps",
+  utils:   "🔧 Utilitaires",
   network: "🌐 Réseau",
 };
 
@@ -50,15 +51,6 @@ export const SERVICES = {
     monitored:     true,
   },
 
-  mariadb: {
-    containerName: "mariadb",
-    label:         "MariaDB",
-    emoji:         "🦭",
-    category:      "apps",
-    controllable:  true,
-    monitored:     true,
-  },
-
   pingvinshare: {
     containerName: "pingvin-share",
     label:         "Pingvin Share",
@@ -74,6 +66,24 @@ export const SERVICES = {
     emoji:         "🤖",
     category:      "apps",
     controllable:  false,
+    monitored:     true,
+  },
+
+  dockersocketproxy: {
+    containerName: "docker-socket-proxy",
+    label:         "Docker Socket Proxy",
+    emoji:         "🔌",
+    category:      "utils",
+    controllable:  false,
+    monitored:     true,
+  },
+
+  mariadb: {
+    containerName: "mariadb",
+    label:         "MariaDB",
+    emoji:         "🦭",
+    category:      "utils",
+    controllable:  true,
     monitored:     true,
   },
 
@@ -152,7 +162,7 @@ export function groupByCategory(services: ServiceName[]): Map<ServiceCategory, S
     const cat = SERVICES[s].category;
     map.get(cat)!.push(s);
   }
-  
+
   for (const [cat, list] of map) {
     if (list.length === 0) map.delete(cat);
   }

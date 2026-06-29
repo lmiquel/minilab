@@ -8,8 +8,14 @@ const seenHandshakes = new Map<string, number>(); // pubkey → timestamp dernie
 const connectedPeers = new Set<string>();          // pubkeys actuellement connectés
 const peerNames = new Map<string, string>();        // pubkey → nom
 
-// Les streams Docker multiplexés contiennent un header de 8 bytes à nettoyer
-const cleanOutput = (s: string) => s.replace(/[\x00-\x08\x0e-\x1f\ufffd]/g, "").trim();
+// ─────────────────────────────────────────────────────────────────────────────
+//  Utilitaires
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Validation des clés publiques WireGuard (base64, exactement 44 chars)
+function extractPubkeys(output: string): string[] {
+  return [...output.matchAll(/^([A-Za-z0-9+/]{43}=)$/gm)].map((m) => m[1]);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  API publique
@@ -28,9 +34,9 @@ export function getConnectedPeers(): { name: string; since: Date }[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function loadPeerNames(peers: string[]): Promise<void> {
-  let output: string;
+  let raw: string;
   try {
-    output = await dockerManager.execInWireguard(["wg", "show", "wg0", "peers"]);
+    raw = await dockerManager.exec("wireguard", "wg show wg0 peers");
   } catch (err) {
     console.error("[WG] Impossible de récupérer les peers WireGuard:", err);
     return;
@@ -38,7 +44,7 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
 
   // `wg show wg0 peers` retourne une pubkey par ligne, dans le même ordre que wg0.conf
   // ce qui correspond à l'ordre de WG_PEERS
-  const pubkeys = cleanOutput(output).split("\n").filter(Boolean);
+  const pubkeys = extractPubkeys(raw);
 
   if (pubkeys.length !== peers.length) {
     console.warn(
@@ -47,9 +53,8 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
   }
 
   for (let i = 0; i < Math.min(pubkeys.length, peers.length); i++) {
-    const pubkey = cleanOutput(pubkeys[i]);
-    peerNames.set(pubkey, peers[i]);
-    console.log(`[WG] Peer mappé: ${peers[i]} → ${pubkey.slice(0, 10)}…`);
+    peerNames.set(pubkeys[i], peers[i]);
+    console.log(`[WG] Peer mappé: ${peers[i]} → ${pubkeys[i].slice(0, 10)}…`);
   }
 }
 
@@ -63,19 +68,19 @@ export function startWireGuardWatcher(monitor: MonitorService): void {
 }
 
 async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> {
-  let output: string;
+  let raw: string;
   try {
-    output = await dockerManager.execInWireguard(["wg", "show", "wg0", "latest-handshakes"]);
+    raw = await dockerManager.exec("wireguard", "wg show wg0 latest-handshakes");
   } catch (err) {
     console.error("[WG] Erreur exec:", err);
     return;
   }
 
   const now = Date.now();
-  const lines = cleanOutput(output).split("\n").filter(Boolean);
+  const lines = raw.split("\n").filter(Boolean);
 
   for (const line of lines) {
-    const parts = line.split(/\s+/);
+    const parts = line.trim().split(/\s+/);
     if (parts.length < 2) continue;
 
     const [pubkey, tsStr] = parts;

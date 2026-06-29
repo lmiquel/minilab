@@ -7,7 +7,6 @@ bot/node_modules/
 bot/dist/
 
 # Build
-ragnarok/rathena/
 *.zip
 
 # Backups locaux

@@ -24,6 +24,13 @@ services:
       - "2457:2457/udp"
       - "2458:2458/udp"
     restart: unless-stopped
+    healthcheck:
+      # Vérifie que le port principal Valheim répond
+      test: ["CMD", "nc", "-zu", "localhost", "2456"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 120s  # Valheim peut mettre du temps à démarrer
     networks:
       minilab:
         ipv4_address: 172.20.0.20
@@ -56,6 +63,13 @@ services:
     ports:
       - "25565:25565/tcp"
     restart: unless-stopped
+    healthcheck:
+      # Vérifie que le port Minecraft répond
+      test: ["CMD", "nc", "-z", "localhost", "25565"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 180s  # Cobblemon + mods Fabric peut être long à charger
     networks:
       minilab:
         ipv4_address: 172.20.0.22

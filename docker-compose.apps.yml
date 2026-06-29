@@ -1,21 +1,8 @@
-services:
-  mariadb:
-    image: lscr.io/linuxserver/mariadb:latest
-    container_name: mariadb
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Paris
-      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-    volumes:
-      - /mnt/ssd/mariadb/config:/config
-    restart: unless-stopped
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.40
-    labels:
-      - "minilab.service=mariadb"
+networks:
+  minilab:
+    external: true
 
+services:
   pingvin-share:
     image: smp46/pingvin-share-x:latest
     container_name: pingvin-share
@@ -26,6 +13,12 @@ services:
       - /mnt/ssd/pingvin/data:/opt/app/backend/data
       - /mnt/ssd/pingvin/images:/opt/app/frontend/public/img
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       minilab:
         ipv4_address: 172.20.0.41
@@ -36,21 +29,28 @@ services:
     build:
       context: ./minilab-helper
       dockerfile: Dockerfile
-      args:
-        DOCKER_GID: ${DOCKER_GID}
     container_name: minilab-helper
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
       - WG_PEERS=${WG_PEERS}
       - TZ=Europe/Paris
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /usr/bin/docker:/usr/bin/docker:ro
       - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
     restart: unless-stopped
+    healthcheck:
+      # Vérifie que le process Node tourne correctement
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       minilab:
         ipv4_address: 172.20.0.30
+    depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
     labels:
       - "minilab.service=minilab-helper"

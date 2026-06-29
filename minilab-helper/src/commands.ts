@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { dockerManager, ServiceName } from "./docker";
+import { dockerManager, ServiceName, HealthStatus } from "./docker";
 import { MonitorService } from "./monitor";
 import {
   SERVICES,
@@ -24,6 +24,13 @@ import { getConnectedPeers } from "./wireguard";
 
 const execAsync = promisify(exec);
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
+
+const HEALTH_EMOJI: Record<HealthStatus, string> = {
+  healthy:   "💚",
+  unhealthy: "❤️‍🩹",
+  starting:  "⏳",
+  none:      "⬜",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Définition des commandes slash
@@ -142,13 +149,25 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
       const status = statusMap.get(s);
       const { emoji, label } = SERVICES[s];
       if (!status) return `${emoji} **${label}** — ❓ inconnu`;
+
       const stateEmoji = status.state === "running" ? "🟢" : "🔴";
-      return `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`  •  🔁 ${status.restartCount}`;
+      const healthPart = status.health !== "none"
+        ? `  ${HEALTH_EMOJI[status.health]} \`${status.health}\``
+        : "";
+
+      return `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`${healthPart}  •  🔁 ${status.restartCount}`;
     });
 
     embed.addFields({
       name: CATEGORY_LABELS[cat],
       value: lines.join("\n"),
+      inline: false,
+    });
+
+    // Séparateur de catégorie
+    embed.addFields({
+      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      value: "​",
       inline: false,
     });
   }
@@ -213,10 +232,9 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
   const grouped = groupByCategory(MONITORED_SERVICES);
 
   for (const [cat, services] of grouped) {
-    // Séparateur de catégorie (field vide avec juste le titre)
     embed.addFields({
-      name: CATEGORY_LABELS[cat],
-      value: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      value: CATEGORY_LABELS[cat],
       inline: false,
     });
 

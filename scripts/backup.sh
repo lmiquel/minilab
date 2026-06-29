@@ -19,17 +19,6 @@ mkdir -p "$DEST_VALHEIM"
 cp -a /mnt/ssd/valheim/worlds "$DEST_VALHEIM/" 2>/dev/null || true
 echo "[backup] Valheim OK → $DEST_VALHEIM"
 
-# ── Ragnarok : dump MariaDB ───────────────────────────────────────────────────
-echo "[backup] Ragnarok MariaDB…"
-DEST_RO="$BACKUP_ROOT/ragnarok/$DATE"
-mkdir -p "$DEST_RO"
-docker exec ragnarok-db mysqldump \
-  -u ragnarok \
-  -p"${RO_DB_PASSWORD:-changeme}" \
-  ragnarok \
-  | gzip > "$DEST_RO/ragnarok_$(date +%Y%m%d_%H%M).sql.gz"
-echo "[backup] Ragnarok OK → $DEST_RO"
-
 # ── Pi-hole : sauvegarde de la configuration et des listes ───────────────────
 echo "[backup] Pi-hole…"
 DEST_PIHOLE="$BACKUP_ROOT/pihole/$DATE"

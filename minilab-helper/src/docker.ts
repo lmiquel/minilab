@@ -4,12 +4,15 @@ import { ServiceName, SERVICES } from "./services-docker";
 export type { ServiceName };
 export { MONITORED_SERVICES, CONTROLLABLE_SERVICES } from "./services-docker";
 
+export type HealthStatus = "healthy" | "unhealthy" | "starting" | "none";
+
 export interface ContainerStatus {
   name: ServiceName;
   containerId: string;
   state: string;        // running | exited | restarting | …
   status: string;
   restartCount: number;
+  health: HealthStatus;
 }
 
 export interface ResourceUsage {
@@ -22,22 +25,47 @@ class DockerManager {
   private docker: Dockerode;
 
   constructor() {
-    this.docker = new Dockerode({ socketPath: "/var/run/docker.sock" });
+    const url = new URL(process.env.DOCKER_HOST);
+    this.docker = new Dockerode({ host: url.hostname, port: Number(url.port) });
   }
 
-  /** Exécute une commande dans le conteneur WireGuard et retourne le stdout */
-  async execInWireguard(cmd: string[]): Promise<string> {
-    const container = this.docker.getContainer(SERVICES.wireguard.containerName);
+  /**
+   * Exécute une commande dans un conteneur et retourne le stdout.
+   *
+   * Le stream Docker exec est multiplexé (format 8-byte header par frame).
+   * On utilise Dockerode.demuxStream pour séparer stdout/stderr correctement,
+   * en accumulant les chunks dans des PassThrough streams — ce qui évite toute
+   * corruption binaire liée à chunk.toString() sur des données non-UTF8.
+   */
+  async exec(service: ServiceName, cmd: string): Promise<string> {
+    const { PassThrough } = await import("stream");
+
+    const container = this.docker.getContainer(SERVICES[service].containerName);
     const exec = await container.exec({
-      Cmd: cmd,
+      Cmd: cmd.split(" "),
       AttachStdout: true,
-      AttachStderr: false,
+      AttachStderr: true,
     });
+
     const stream = await exec.start({ hijack: true, stdin: false });
-    return new Promise<string>((resolve) => {
-      let data = "";
-      stream.on("data", (chunk: Buffer) => (data += chunk.toString()));
-      stream.on("end", () => resolve(data));
+
+    return new Promise<string>((resolve, reject) => {
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+
+      const chunks: Buffer[] = [];
+      stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+
+      stream.on("error", reject);
+      stdout.on("error", reject);
+
+      stream.on("end", () => {
+        resolve(Buffer.concat(chunks).toString("utf8"));
+      });
+
+      // demuxStream gère le header 8-byte et route chaque frame vers
+      // le bon PassThrough selon le stream_type (1=stdout, 2=stderr)
+      Dockerode.demuxStream(stream, stdout, stderr);
     });
   }
 
@@ -52,6 +80,7 @@ class DockerManager {
       state: info.State.Status,
       status: info.State.Status,
       restartCount: info.RestartCount,
+      health: (info.State.Health?.Status ?? "none") as HealthStatus,
     };
   }
 
@@ -86,7 +115,7 @@ class DockerManager {
     return new Promise((resolve, reject) => {
       container.stats({ stream: false }, (err: Error | null, data: any) => {
         if (err) return reject(err);
-        
+
         const cpuDelta =
           data.cpu_stats.cpu_usage.total_usage -
           data.precpu_stats.cpu_usage.total_usage;
@@ -96,7 +125,7 @@ class DockerManager {
         const cpuPercent =
           systemDelta > 0 ? (cpuDelta / systemDelta) * numCpus * 100 : 0;
 
-        // ← Correction : soustraction du cache pour la vraie RAM utilisée
+        // Soustraction du cache pour la vraie RAM utilisée
         const memUsage = (data.memory_stats.usage || 0) - (data.memory_stats.stats?.inactive_file || 0);
         const memLimit = data.memory_stats.limit || 1;
 

@@ -46,8 +46,6 @@ mount -a
 echo ""
 echo "=== 4. Création de l'arborescence ==="
 mkdir -p \
-  "$MOUNT_POINT/ragnarok/mysql" \
-  "$MOUNT_POINT/ragnarok/data" \
   "$MOUNT_POINT/valheim" \
   "$MOUNT_POINT/valheim/backups" \
   "$MOUNT_POINT/pihole/etc" \

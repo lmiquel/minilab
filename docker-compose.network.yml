@@ -14,6 +14,12 @@ services:
     volumes:
       - /mnt/ssd/duckdns/config:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     labels:
       - "minilab.service=duckdns"
 
@@ -37,6 +43,13 @@ services:
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
+    healthcheck:
+      # Requête DNS réelle — vérifie que pihole résout vraiment, pas juste qu'il tourne
+      test: ["CMD", "dig", "+short", "+timeout=3", "cloudflare.com", "@127.0.0.1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       minilab:
         ipv4_address: 172.20.0.3
@@ -70,12 +83,21 @@ services:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv4.ip_forward=1
     restart: unless-stopped
+    healthcheck:
+      # wg show retourne 0 si l'interface wg0 est active, non-zero sinon
+      test: ["CMD", "wg", "show"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       minilab:
         ipv4_address: 172.20.0.10
     depends_on:
-      - pihole
-      - duckdns
+      pihole:
+        condition: service_healthy
+      duckdns:
+        condition: service_started
     labels:
       - "minilab.service=wireguard"
 
@@ -86,6 +108,13 @@ services:
     environment:
       - TZ=Europe/Paris
     restart: unless-stopped
+    healthcheck:
+      # cloudflared expose un endpoint /ready sur le port 2000
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:2000/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       minilab:
         ipv4_address: 172.20.0.11
