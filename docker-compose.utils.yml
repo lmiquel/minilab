@@ -14,7 +14,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
     healthcheck:
-      # Vérifie que l'API Docker proxy répond bien
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:2375/version"]
       interval: 30s
       timeout: 5s
@@ -38,7 +37,7 @@ services:
       - /mnt/ssd/mariadb/config:/config
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
+      test: ["CMD", "nc", "-z", "localhost", "3306"]
       interval: 30s
       timeout: 5s
       retries: 3

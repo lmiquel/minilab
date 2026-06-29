@@ -15,11 +15,11 @@ services:
       - /mnt/ssd/duckdns/config:/config
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost"]
-      interval: 60s
+      test: ["CMD", "pgrep", "-x", "duckdns"]
+      interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     labels:
       - "minilab.service=duckdns"
 
@@ -109,8 +109,8 @@ services:
       - TZ=Europe/Paris
     restart: unless-stopped
     healthcheck:
-      # cloudflared expose un endpoint /ready sur le port 2000
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:2000/ready"]
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "cloudflared"]
       interval: 30s
       timeout: 5s
       retries: 3
