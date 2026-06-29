@@ -26,7 +26,7 @@ class DockerManager {
 
   constructor() {
     const url = new URL(process.env.DOCKER_HOST);
-    this.docker = new Dockerode({ host: url.hostname, port: Number(url.port) });
+    this.docker = new Dockerode({ host: url.hostname, port: Number(url.port) || 2375 });
   }
 
   /**
@@ -65,7 +65,7 @@ class DockerManager {
 
       // demuxStream gère le header 8-byte et route chaque frame vers
       // le bon PassThrough selon le stream_type (1=stdout, 2=stderr)
-      Dockerode.demuxStream(stream, stdout, stderr);
+      (Dockerode as any).demuxStream(stream, stdout, stderr);
     });
   }
 
