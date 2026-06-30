@@ -180,33 +180,37 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
       const { emoji, label } = SERVICES[s];
 
       if (!status) {
-        lines.push(`${emoji} **${label}** — ❓ inconnu`);
+        lines.push(`${emoji} **${label}**\n❓ inconnu`);
         continue;
       }
 
-      const stateEmoji = status.state === "running" ? "🟢" : "🔴";
-      const healthPart = status.health !== "none"
-        ? `  ${HEALTH_EMOJI[status.health]} \`${status.health}\``
-        : "";
+      const isRunning = status.state === "running";
+      const hasHealth = status.health !== "none";
+
+      // Si healthcheck dispo → on affiche uniquement son résultat (running implicite)
+      // Si pas de healthcheck → on affiche l'état Docker
+      const statePart = hasHealth && isRunning
+        ? `${HEALTH_EMOJI[status.health]} \`${status.health}\``
+        : `${isRunning ? "🟢" : "🔴"} \`${status.state}\``;
 
       let resPart = "";
-      if (status.state === "running") {
+      if (isRunning) {
         try {
           const res = await dockerManager.getResourceUsage(s);
-          resPart = `  •  CPU \`${res.cpuPercent}%\` RAM \`${res.memUsageMB}MB\``;
+          resPart = `\nCPU \`${res.cpuPercent}%\`  •  RAM \`${res.memUsageMB}MB\``;
         } catch {
           resPart = "";
         }
       }
 
       lines.push(
-        `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`${healthPart}  •  🔁 ${status.restartCount}${resPart}`
+        `${emoji} **${label}**\n${statePart}  •  🔁 ${status.restartCount}${resPart}`
       );
     }
 
     embedStatus.addFields({
       name: CATEGORY_LABELS[cat],
-      value: lines.join("\n"),
+      value: lines.join("\n\n"),
       inline: false,
     });
 
@@ -239,8 +243,8 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
 
       embedVpn.addFields({
         name: `${statusEmoji} ${peer.name}`,
-        value: `Dernier handshake : \`${handshakeStr}\``,
-        inline: false,
+        value: `Dernier handshake :\n\`${handshakeStr}\``,
+        inline: true,
       });
     }
   }
@@ -265,19 +269,21 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
     const lines = services.map((s) => {
       const status = statusMap.get(s);
       const { emoji, label } = SERVICES[s];
-      if (!status) return `${emoji} **${label}** — ❓ inconnu`;
+      if (!status) return `${emoji} **${label}**\n❓ inconnu`;
 
-      const stateEmoji = status.state === "running" ? "🟢" : "🔴";
-      const healthPart = status.health !== "none"
-        ? `  ${HEALTH_EMOJI[status.health]} \`${status.health}\``
-        : "";
+      const isRunning = status.state === "running";
+      const hasHealth = status.health !== "none";
 
-      return `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`${healthPart}  •  🔁 ${status.restartCount}`;
+      const statePart = hasHealth && isRunning
+        ? `${HEALTH_EMOJI[status.health]} \`${status.health}\``
+        : `${isRunning ? "🟢" : "🔴"} \`${status.state}\``;
+
+      return `${emoji} **${label}**\n${statePart}  •  🔁 ${status.restartCount}`;
     });
 
     embed.addFields({
       name: CATEGORY_LABELS[cat],
-      value: lines.join("\n"),
+      value: lines.join("\n\n"),
       inline: false,
     });
 
