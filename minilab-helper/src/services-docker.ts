@@ -45,7 +45,7 @@ export const SERVICES = {
   cobblemon: {
     containerName: "cobblemon",
     label:         "Cobblemon",
-    emoji:         "🐦‍🔥",
+    emoji:         "🎊​",
     category:      "game",
     controllable:  true,
     monitored:     true,

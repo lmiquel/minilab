@@ -20,7 +20,7 @@ import {
   toDiscordChoices,
   groupByCategory,
 } from "./services-docker";
-import { getConnectedPeers } from "./wireguard";
+import { getConnectedPeers, getAllPeers } from "./wireguard";
 
 const execAsync = promisify(exec);
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
@@ -39,6 +39,10 @@ const HEALTH_EMOJI: Record<HealthStatus, string> = {
 const SERVICE_CHOICES = toDiscordChoices(CONTROLLABLE_SERVICES);
 
 export const commands = [
+  new SlashCommandBuilder()
+    .setName("overview")
+    .setDescription("Vue d'ensemble du minilab : statut, ressources et VPN"),
+
   new SlashCommandBuilder()
     .setName("status")
     .setDescription("Affiche le statut de tous les services minilab"),
@@ -110,6 +114,7 @@ export function setupCommandHandler(client: Client, monitor: MonitorService): vo
 
     try {
       switch (interaction.commandName) {
+        case "overview":  await handleOverview(interaction);          break;
         case "status":    await handleStatus(interaction);            break;
         case "stop":      await handleStop(interaction, monitor);     break;
         case "start":     await handleStart(interaction, monitor);    break;
@@ -130,6 +135,113 @@ export function setupCommandHandler(client: Client, monitor: MonitorService): vo
 // ─────────────────────────────────────────────────────────────────────────────
 //  Implémentations des commandes
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function handleOverview(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+
+  const fmt = (d: Date) => d.toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+
+  // ── Embed 1 : Statut & Ressources ────────────────────────────────────────
+
+  const [statuses, host, temp] = await Promise.all([
+    dockerManager.getAllStatuses(),
+    dockerManager.getHostResources().catch(() => null),
+    dockerManager.getRpiTemperature().catch(() => null),
+  ]);
+
+  const statusMap = new Map(statuses.map((s) => [s.name, s]));
+
+  const tempStr = temp !== null
+    ? `${temp >= 70 ? "🔴" : temp >= 60 ? "🟡" : "🟢"} **${temp}°C**`
+    : "❌ indisponible";
+
+  const hostStr = host !== null
+    ? `CPU : \`${host.cpuPercent}%\`  •  RAM : \`${host.memUsedMB}/${host.memTotalMB} MB (${host.memPercent}%)\``
+    : "❌ indisponible";
+
+  const embedStatus = new EmbedBuilder()
+    .setTitle("📊 Overview — Statut & Ressources")
+    .setColor(Colors.Blurple)
+    .setTimestamp()
+    .setDescription(`🌡️ Température : ${tempStr}\n🖥️ ${hostStr}`);
+
+  const grouped = groupByCategory(MONITORED_SERVICES);
+
+  for (const [cat, services] of grouped) {
+    const lines: string[] = [];
+
+    for (const s of services) {
+      const status = statusMap.get(s);
+      const { emoji, label } = SERVICES[s];
+
+      if (!status) {
+        lines.push(`${emoji} **${label}** — ❓ inconnu`);
+        continue;
+      }
+
+      const stateEmoji = status.state === "running" ? "🟢" : "🔴";
+      const healthPart = status.health !== "none"
+        ? `  ${HEALTH_EMOJI[status.health]} \`${status.health}\``
+        : "";
+
+      let resPart = "";
+      if (status.state === "running") {
+        try {
+          const res = await dockerManager.getResourceUsage(s);
+          resPart = `  •  CPU \`${res.cpuPercent}%\` RAM \`${res.memUsageMB}MB\``;
+        } catch {
+          resPart = "";
+        }
+      }
+
+      lines.push(
+        `${emoji} **${label}** — ${stateEmoji} \`${status.state}\`${healthPart}  •  🔁 ${status.restartCount}${resPart}`
+      );
+    }
+
+    embedStatus.addFields({
+      name: CATEGORY_LABELS[cat],
+      value: lines.join("\n"),
+      inline: false,
+    });
+
+    embedStatus.addFields({
+      name: "​",
+      value: "​",
+      inline: false,
+    });
+  }
+
+  // ── Embed 2 : VPN ────────────────────────────────────────────────────────
+
+  const peers = getAllPeers();
+  const connectedCount = peers.filter((p) => p.connected).length;
+
+  const embedVpn = new EmbedBuilder()
+    .setTitle("🔒 Overview — Peers VPN")
+    .setColor(connectedCount > 0 ? Colors.Green : Colors.Grey)
+    .setTimestamp()
+    .setDescription(`**${connectedCount}/${peers.length}** peer(s) connecté(s)`);
+
+  if (peers.length === 0) {
+    embedVpn.setDescription("Aucun peer configuré.");
+  } else {
+    for (const peer of peers) {
+      const statusEmoji = peer.connected ? "🟢" : "⚫";
+      const handshakeStr = peer.lastHandshake
+        ? fmt(peer.lastHandshake)
+        : "jamais connecté";
+
+      embedVpn.addFields({
+        name: `${statusEmoji} ${peer.name}`,
+        value: `Dernier handshake : \`${handshakeStr}\``,
+        inline: false,
+      });
+    }
+  }
+
+  await interaction.editReply({ embeds: [embedStatus, embedVpn] });
+}
 
 async function handleStatus(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });

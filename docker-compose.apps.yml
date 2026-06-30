@@ -38,6 +38,8 @@ services:
       - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
       - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
+      - /proc/stat:/proc/host/stat:ro
+      - /proc/meminfo:/proc/host/meminfo:ro
     restart: unless-stopped
     healthcheck:
       # Vérifie que le process Node tourne correctement

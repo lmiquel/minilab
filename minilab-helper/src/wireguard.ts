@@ -21,6 +21,25 @@ function extractPubkeys(output: string): string[] {
 //  API publique
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface PeerInfo {
+  name: string;
+  connected: boolean;
+  lastHandshake: Date | null; // null = jamais connecté
+}
+
+/** Retourne tous les peers configurés avec leur statut pour /overview */
+export function getAllPeers(): PeerInfo[] {
+  return Array.from(peerNames.entries()).map(([pubkey, name]) => {
+    const ts = seenHandshakes.get(pubkey);
+    const connected = connectedPeers.has(pubkey);
+    return {
+      name,
+      connected,
+      lastHandshake: ts ? new Date(ts * 1000) : null,
+    };
+  });
+}
+
 /** Retourne la liste des peers actuellement connectés, utilisable par /vpn */
 export function getConnectedPeers(): { name: string; since: Date }[] {
   return Array.from(connectedPeers).map((pubkey) => ({
@@ -42,8 +61,6 @@ export async function loadPeerNames(peers: string[]): Promise<void> {
     return;
   }
 
-  // `wg show wg0 peers` retourne une pubkey par ligne, dans le même ordre que wg0.conf
-  // ce qui correspond à l'ordre de WG_PEERS
   const pubkeys = extractPubkeys(raw);
 
   if (pubkeys.length !== peers.length) {
@@ -96,16 +113,11 @@ async function checkWireGuardHandshakes(monitor: MonitorService): Promise<void> 
     if (isConnected && !wasConnected) {
       connectedPeers.add(pubkey);
       seenHandshakes.set(pubkey, ts);
-      await monitor.dm(
-        `🟢 *Connexion VPN détectée :* **${peerName}** [${date}]`
-      );
+      await monitor.dm(`🟢 *Connexion VPN détectée :* **${peerName}** [${date}]`);
     } else if (!isConnected && wasConnected) {
       connectedPeers.delete(pubkey);
-      await monitor.dm(
-        `🔴 *Déconnexion VPN :* **${peerName}** [${date}]`
-      );
+      await monitor.dm(`🔴 *Déconnexion VPN :* **${peerName}** [${date}]`);
     } else {
-      // Mise à jour silencieuse du timestamp même sans changement d'état
       seenHandshakes.set(pubkey, ts);
     }
   }
