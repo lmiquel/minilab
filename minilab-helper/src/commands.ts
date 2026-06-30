@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { dockerManager, ServiceName, HealthStatus } from "./docker";
+import { dockerManager, ServiceName, HealthStatus, ContainerStatus } from "./docker";
 import { MonitorService } from "./monitor";
 import {
   SERVICES,
@@ -149,7 +149,7 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
     dockerManager.getRpiTemperature().catch(() => null),
   ]);
 
-  const statusMap = new Map(statuses.map((s) => [s.name, s]));
+  const statusMap = new Map<ServiceName, ContainerStatus>(statuses.map((s) => [s.name, s]));
 
   const tempStr = temp !== null
     ? `${temp >= 70 ? "🔴" : temp >= 60 ? "🟡" : "🟢"} **${temp}°C**`

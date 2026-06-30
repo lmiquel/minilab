@@ -22,6 +22,13 @@ export interface ResourceUsage {
   memPercent: number;
 }
 
+export interface HostResources {
+  cpuPercent: number;
+  memUsedMB: number;
+  memTotalMB: number;
+  memPercent: number;
+}
+
 class DockerManager {
   private docker: Dockerode;
 
