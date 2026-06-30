@@ -174,15 +174,17 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
 
   for (const [cat, services] of grouped) {
     const lines: string[] = [];
+    embedStatus.addFields({
+      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      value: CATEGORY_LABELS[cat],
+      inline: false,
+    });
 
     for (const s of services) {
       const status = statusMap.get(s);
       const { emoji, label } = SERVICES[s];
 
-      if (!status) {
-        lines.push(`${emoji} **${label}**\n❓ inconnu`);
-        continue;
-      }
+      if (!status) continue;
 
       const isRunning = status.state === "running";
       const hasHealth = status.health !== "none";
@@ -203,16 +205,12 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
         }
       }
 
-      lines.push(
-        `${emoji} **${label}**\n${statePart}  •  🔁 ${status.restartCount}${resPart}`
-      );
+      embedStatus.addFields({
+        name: `${emoji} ${label}`,
+        value: `${statePart}  •  🔁 ${status.restartCount}\n${resPart}`,
+        inline: true,
+      });
     }
-
-    embedStatus.addFields({
-      name: CATEGORY_LABELS[cat],
-      value: lines.join("\n\n"),
-      inline: false,
-    });
 
     embedStatus.addFields({
       name: "​",
@@ -266,10 +264,16 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
   const grouped = groupByCategory(MONITORED_SERVICES);
 
   for (const [cat, services] of grouped) {
-    const lines = services.map((s) => {
+    embed.addFields({
+      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
+      value: CATEGORY_LABELS[cat],
+      inline: false,
+    });
+
+    for (const s of services) {
       const status = statusMap.get(s);
       const { emoji, label } = SERVICES[s];
-      if (!status) return `${emoji} **${label}**\n❓ inconnu`;
+      if (!status) continue;
 
       const isRunning = status.state === "running";
       const hasHealth = status.health !== "none";
@@ -277,15 +281,13 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
       const statePart = hasHealth && isRunning
         ? `${HEALTH_EMOJI[status.health]} \`${status.health}\``
         : `${isRunning ? "🟢" : "🔴"} \`${status.state}\``;
-
-      return `${emoji} **${label}**\n${statePart}  •  🔁 ${status.restartCount}`;
-    });
-
-    embed.addFields({
-      name: CATEGORY_LABELS[cat],
-      value: lines.join("\n\n"),
-      inline: false,
-    });
+        
+      embed.addFields({
+        name: `${emoji} ${label}`,
+        value: `${statePart}  •  🔁 ${status.restartCount}`,
+        inline: true,
+      });
+    }
 
     // Séparateur de catégorie
     embed.addFields({
