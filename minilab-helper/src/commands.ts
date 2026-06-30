@@ -176,7 +176,7 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
     const lines: string[] = [];
     embedStatus.addFields({
       name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: CATEGORY_LABELS[cat],
+      value: `**${CATEGORY_LABELS[cat]}**`,
       inline: false,
     });
 
@@ -207,16 +207,10 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
 
       embedStatus.addFields({
         name: `${emoji} ${label}`,
-        value: `${statePart}  •  🔁 ${status.restartCount}\n${resPart}`,
+        value: `${statePart}  •  🔁 ${status.restartCount}${resPart}`,
         inline: true,
       });
     }
-
-    embedStatus.addFields({
-      name: "​",
-      value: "​",
-      inline: false,
-    });
   }
 
   // ── Embed 2 : VPN ────────────────────────────────────────────────────────
@@ -266,7 +260,7 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
   for (const [cat, services] of grouped) {
     embed.addFields({
       name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: CATEGORY_LABELS[cat],
+      value: `**${CATEGORY_LABELS[cat]}**`,
       inline: false,
     });
 
@@ -288,13 +282,6 @@ async function handleStatus(interaction: ChatInputCommandInteraction): Promise<v
         inline: true,
       });
     }
-
-    // Séparateur de catégorie
-    embed.addFields({
-      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: "​",
-      inline: false,
-    });
   }
 
   await interaction.editReply({ embeds: [embed] });
@@ -359,7 +346,7 @@ async function handleResources(interaction: ChatInputCommandInteraction): Promis
   for (const [cat, services] of grouped) {
     embed.addFields({
       name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: CATEGORY_LABELS[cat],
+      value: `**${CATEGORY_LABELS[cat]}**`,
       inline: false,
     });
 
