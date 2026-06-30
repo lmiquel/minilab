@@ -1,4 +1,3 @@
-import * as DockerodeModule from "dockerode";
 import Dockerode from "dockerode";
 import { ServiceName, SERVICES } from "./services-docker";
 
@@ -29,6 +28,12 @@ export interface HostResources {
   memPercent: number;
 }
 
+export interface StorageInfo {
+  usedGB: number;
+  totalGB: number;
+  percent: number;
+}
+
 class DockerManager {
   private docker: Dockerode;
 
@@ -48,34 +53,34 @@ class DockerManager {
    */
   async exec(service: ServiceName, cmd: string): Promise<string> {
     const { PassThrough } = await import("stream");
- 
+
     const container = this.docker.getContainer(SERVICES[service].containerName);
     const exec = await container.exec({
       Cmd: cmd.split(" "),
       AttachStdout: true,
       AttachStderr: true,
     });
- 
+
     const stream = await exec.start({ hijack: true, stdin: false });
- 
+
     return new Promise<string>((resolve, reject) => {
       const stdout = new PassThrough();
       const stderr = new PassThrough();
- 
+
       const chunks: Buffer[] = [];
       stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
- 
+
       stream.on("error", reject);
       stdout.on("error", reject);
- 
+
       stream.on("end", () => {
         resolve(Buffer.concat(chunks).toString("utf8"));
       });
- 
+
       (container as any).modem.demuxStream(stream, stdout, stderr);
     });
   }
- 
+
   /**
    * Retourne les logs récents d'un container sous forme de string.
    */
@@ -84,7 +89,6 @@ class DockerManager {
     const buffer = await container.logs({ stdout: true, stderr: true, tail }) as Buffer;
     return buffer.toString("utf8");
   }
-
 
   /** Renvoie le statut d'un conteneur */
   async getStatus(service: ServiceName): Promise<ContainerStatus> {
@@ -156,21 +160,21 @@ class DockerManager {
   }
 
   /**
-  * Récupère la consommation CPU et RAM globale du RPi hôte.
-  * Lit /proc/host/stat et /proc/host/meminfo montés depuis l'hôte.
-  *
-  * CPU : deux lectures de /proc/stat espacées de 500ms pour calculer
-  * le delta (un snapshot instantané seul ne suffit pas).
-  */
+   * Récupère la consommation CPU et RAM globale du RPi hôte.
+   * Lit /host/stat et /host/meminfo montés depuis l'hôte.
+   *
+   * CPU : deux lectures espacées de 500ms pour calculer le delta
+   * (un snapshot instantané seul ne suffit pas).
+   */
   async getHostResources(): Promise<HostResources> {
     const fs = await import("fs/promises");
- 
+
     const readStat = async (): Promise<number[]> => {
-      const raw = await fs.readFile("/proc/host/stat", "utf-8");
+      const raw = await fs.readFile("/host/stat", "utf-8");
       const line = raw.split("\n").find((l) => l.startsWith("cpu "))!;
       return line.trim().split(/\s+/).slice(1).map(Number);
     };
- 
+
     const calcCpu = (a: number[], b: number[]): number => {
       const totalA = a.reduce((s, v) => s + v, 0);
       const totalB = b.reduce((s, v) => s + v, 0);
@@ -181,13 +185,13 @@ class DockerManager {
       if (totalDelta === 0) return 0;
       return Math.round(((totalDelta - idleDelta) / totalDelta) * 1000) / 10;
     };
- 
-    const [stat1] = await Promise.all([readStat()]);
+
+    const stat1 = await readStat();
     await new Promise((res) => setTimeout(res, 500));
     const stat2 = await readStat();
     const cpuPercent = calcCpu(stat1, stat2);
- 
-    const memRaw = await fs.readFile("/proc/host/meminfo", "utf-8");
+
+    const memRaw = await fs.readFile("/host/meminfo", "utf-8");
     const memLines = Object.fromEntries(
       memRaw.split("\n")
         .filter(Boolean)
@@ -196,13 +200,37 @@ class DockerManager {
           return [key.trim(), parseInt(val.trim(), 10)];
         })
     );
- 
+
     const memTotalMB = Math.round(memLines["MemTotal"] / 1024);
     const memAvailMB = Math.round(memLines["MemAvailable"] / 1024);
     const memUsedMB  = memTotalMB - memAvailMB;
     const memPercent = Math.round((memUsedMB / memTotalMB) * 1000) / 10;
- 
+
     return { cpuPercent, memUsedMB, memTotalMB, memPercent };
+  }
+
+  /**
+   * Récupère l'espace utilisé/total de la carte SD et du SSD.
+   * Utilise fs.statfs() sur les points de montage montés depuis l'hôte.
+   */
+  async getStorageUsage(): Promise<{ sd: StorageInfo; ssd: StorageInfo }> {
+    const fs = await import("fs/promises");
+
+    const statfsToInfo = async (path: string): Promise<StorageInfo> => {
+      const s = await (fs as any).statfs(path);
+      const totalGB  = Math.round((s.blocks * s.bsize) / 1024 / 1024 / 1024 * 10) / 10;
+      const availGB  = Math.round((s.bavail * s.bsize) / 1024 / 1024 / 1024 * 10) / 10;
+      const usedGB   = Math.round((totalGB - availGB) * 10) / 10;
+      const percent  = Math.round((usedGB / totalGB) * 1000) / 10;
+      return { usedGB, totalGB, percent };
+    };
+
+    const [sd, ssd] = await Promise.all([
+      statfsToInfo("/host/rootfs"),
+      statfsToInfo("/host/ssd"),
+    ]);
+
+    return { sd, ssd };
   }
 
   /** Lit la température du RPi en °C */

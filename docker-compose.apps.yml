@@ -38,11 +38,12 @@ services:
       - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
       - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
-      - /proc/stat:/proc/host/stat:ro
-      - /proc/meminfo:/proc/host/meminfo:ro
+      - /proc/stat:/host/stat:ro
+      - /proc/meminfo:/host/meminfo:ro
+      - /:/host/rootfs:ro
+      - /mnt/ssd:/host/ssd:ro
     restart: unless-stopped
     healthcheck:
-      # Vérifie que le process Node tourne correctement
       test: ["CMD", "node", "-e", "process.exit(0)"]
       interval: 30s
       timeout: 5s

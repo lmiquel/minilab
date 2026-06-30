@@ -143,10 +143,11 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
 
   // ── Embed 1 : Statut & Ressources ────────────────────────────────────────
 
-  const [statuses, host, temp] = await Promise.all([
+  const [statuses, host, temp, storage] = await Promise.all([
     dockerManager.getAllStatuses(),
     dockerManager.getHostResources().catch(() => null),
     dockerManager.getRpiTemperature().catch(() => null),
+    dockerManager.getStorageUsage().catch(() => null),
   ]);
 
   const statusMap = new Map<ServiceName, ContainerStatus>(statuses.map((s) => [s.name, s]));
@@ -159,11 +160,15 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
     ? `CPU : \`${host.cpuPercent}%\`  •  RAM : \`${host.memUsedMB}/${host.memTotalMB} MB (${host.memPercent}%)\``
     : "❌ indisponible";
 
+  const storageStr = storage !== null
+    ? `💾 SD : \`${storage.sd.usedGB}/${storage.sd.totalGB} GB (${storage.sd.percent}%)\`  •  SSD : \`${storage.ssd.usedGB}/${storage.ssd.totalGB} GB (${storage.ssd.percent}%)\``
+    : "❌ indisponible";
+
   const embedStatus = new EmbedBuilder()
     .setTitle("📊 Overview — Statut & Ressources")
     .setColor(Colors.Blurple)
     .setTimestamp()
-    .setDescription(`🌡️ Température : ${tempStr}\n🖥️ ${hostStr}`);
+    .setDescription(`🌡️ Température : ${tempStr}\n🖥️ ${hostStr}\n${storageStr}`);
 
   const grouped = groupByCategory(MONITORED_SERVICES);
 
