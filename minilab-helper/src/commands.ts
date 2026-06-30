@@ -199,7 +199,7 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
       if (isRunning) {
         try {
           const res = await dockerManager.getResourceUsage(s);
-          resPart = `\nCPU \`${res.cpuPercent}%\`  •  RAM \`${res.memUsageMB}MB\``;
+          resPart = `\nCPU \`${res.cpuPercent}%\` \nRAM \`${res.memUsageMB}MB\``;
         } catch {
           resPart = "";
         }
