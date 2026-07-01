@@ -30,7 +30,7 @@ services:
       interval: 60s
       timeout: 5s
       retries: 3
-      start_period: 120s  # Valheim peut mettre du temps à démarrer
+      start_period: 240s
     networks:
       minilab:
         ipv4_address: 172.20.0.20
@@ -58,20 +58,49 @@ services:
       - MAX_PLAYERS=3
       - PVP=FALSE
       - SERVER_NAME=${COBBLEMON_SERVER_NAME}
+      - SPAWN_MONSTERS=false
     volumes:
       - /mnt/ssd/cobblemon:/data
     ports:
       - "25565:25565/tcp"
     restart: unless-stopped
     healthcheck:
-      # Vérifie que le port Minecraft répond
       test: ["CMD", "nc", "-z", "localhost", "25565"]
       interval: 60s
       timeout: 5s
       retries: 3
-      start_period: 180s  # Cobblemon + mods Fabric peut être long à charger
+      start_period: 240s
     networks:
       minilab:
         ipv4_address: 172.20.0.22
     labels:
       - "minilab.service=cobblemon"
+
+  core-keeper:
+    image: escaping/core-keeper-dedicated:latest
+    container_name: core-keeper
+    restart: unless-stopped
+    stop_grace_period: 2m
+    environment:
+      - ARM64_DEVICE=rpi4-pre3
+      - WORLD_NAME=${CORE_KEEPER_WORLD_NAME}
+      - SERVER_NAME=${CORE_KEEPER_SERVER_NAME}
+      - MAX_PLAYERS=5
+      - TZ=Europe/Paris
+      - SERVER_PORT=17000
+    volumes:
+      - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
+      - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
+    ports:
+      - "17000:17000/udp"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "17000"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 240s
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.23
+    labels:
+      - "minilab.service=core-keeper"
