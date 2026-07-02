@@ -87,14 +87,14 @@ services:
       - SERVER_NAME=${CORE_KEEPER_SERVER_NAME}
       - PASSWORD=${CORE_KEEPER_PASSWORD}
       - MAX_PLAYERS=5
-      - SERVER_PORT=17000
+      - SERVER_PORT=27015
       - TZ=Europe/Paris
     volumes:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
     ports:
-      - "17000:17000/udp"
-      - "17001:17001/udp"
+      - "27015:27015/udp"
+      - "27016:27016/udp"
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17000"]
       interval: 60s
