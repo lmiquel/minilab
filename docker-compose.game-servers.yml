@@ -88,7 +88,6 @@ services:
       - GAME_ID=${CORE_KEEPER_GAME_ID}
       - MAX_PLAYERS=5
       - TZ=Europe/Paris
-      - SERVER_PORT=17000
     volumes:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
