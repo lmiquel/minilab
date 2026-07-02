@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
     stop_grace_period: 2m
     environment:
-      - ARM64_DEVICE=rpi4-pre3
+      - ARM64_DEVICE=generic
       - USE_DEPOT_DOWNLOADER=true
       - WORLD_NAME=${CORE_KEEPER_WORLD_NAME}
       - SERVER_NAME=${CORE_KEEPER_SERVER_NAME}
