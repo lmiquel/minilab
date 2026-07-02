@@ -83,6 +83,7 @@ services:
     stop_grace_period: 2m
     environment:
       - ARM64_DEVICE=rpi4-pre3
+      - USE_DEPOT_DOWNLOADER=true
       - WORLD_NAME=${CORE_KEEPER_WORLD_NAME}
       - SERVER_NAME=${CORE_KEEPER_SERVER_NAME}
       - MAX_PLAYERS=5
