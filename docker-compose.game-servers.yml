@@ -25,8 +25,7 @@ services:
       - "2458:2458/udp"
     restart: unless-stopped
     healthcheck:
-      # Vérifie que le port principal Valheim répond
-      test: ["CMD", "nc", "-zu", "localhost", "2456"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/2456"]
       interval: 60s
       timeout: 5s
       retries: 3
@@ -65,7 +64,7 @@ services:
       - "25565:25565/tcp"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "25565"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/25565"]
       interval: 60s
       timeout: 5s
       retries: 3
@@ -96,7 +95,7 @@ services:
     ports:
       - "17000:17000/udp"
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "17000"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17000"]
       interval: 60s
       timeout: 5s
       retries: 3
