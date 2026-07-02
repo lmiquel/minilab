@@ -93,8 +93,8 @@ services:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
     ports:
-      - "10.13.13.1:17000:17000/udp"
-      - "10.13.13.1:17001:17001/udp"
+      - "17000:17000/udp"
+      - "17001:17001/udp"
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17000"]
       interval: 60s
