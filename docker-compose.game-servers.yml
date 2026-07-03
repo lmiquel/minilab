@@ -87,7 +87,6 @@ services:
       - SERVER_NAME=${CORE_KEEPER_SERVER_NAME}
       - PASSWORD=${CORE_KEEPER_PASSWORD}
       - MAX_PLAYERS=5
-      - SERVER_PORT=17000
       - TZ=Europe/Paris
       - BOX64_AES=0
       - BOX64_PCLMULQDQ=0
@@ -95,15 +94,11 @@ services:
       - BOX64_DYNAREC_STRONGMEM=2
       - BOX64_DYNAREC_BLEEDING_EDGE=0
       - BOX64_DYNAREC_SAFEFLAGS=1
-      - BOX64_LOG=1
     volumes:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
-    ports:
-      - "17000:17000/udp"
-      - "17001:17001/udp"
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17000"]
+      test: ["CMD", "bash", "-c", "pgrep -f CoreKeeperServer"]
       interval: 60s
       timeout: 5s
       retries: 3
