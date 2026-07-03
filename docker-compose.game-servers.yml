@@ -95,6 +95,7 @@ services:
       - BOX64_DYNAREC_STRONGMEM=2
       - BOX64_DYNAREC_BLEEDING_EDGE=0
       - BOX64_DYNAREC_SAFEFLAGS=1
+      - BOX64_LOG=1
     volumes:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
