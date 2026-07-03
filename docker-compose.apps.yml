@@ -1,7 +1,3 @@
-networks:
-  minilab:
-    external: true
-
 services:
   pingvin-share:
     image: smp46/pingvin-share-x:latest
