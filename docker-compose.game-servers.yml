@@ -89,6 +89,8 @@ services:
       - MAX_PLAYERS=5
       - SERVER_PORT=17000
       - TZ=Europe/Paris
+      - BOX64_AES=0
+      - BOX64_PCLMULQDQ=0
       - BOX64_DYNAREC_BIGBLOCK=0
       - BOX64_DYNAREC_STRONGMEM=2
       - BOX64_DYNAREC_BLEEDING_EDGE=0
