@@ -90,6 +90,10 @@ services:
       - PASSWORD=${CORE_KEEPER_PASSWORD}
       - MAX_PLAYERS=5
       - TZ=Europe/Paris
+      - SERVER_PORT=17000
+    ports:
+      - 17000:17000/udp
+      - 17001:17001/udp
     dns:
       - 1.1.1.1
       - 1.0.0.1
