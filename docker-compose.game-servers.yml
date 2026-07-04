@@ -88,6 +88,7 @@ services:
       - TZ=Europe/Paris
       - SERVER_IP=172.20.0.23
       - SERVER_PORT=17000
+      - ALLOW_ONLY_PLATFORM=1
     ports:
       - 17000:17000/udp
       - 17001:17001/udp
