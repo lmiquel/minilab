@@ -79,7 +79,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - ARM64_DEVICE=rpi4-pre3
+      - ARM64_DEVICE=generic
       - USE_DEPOT_DOWNLOADER=true
       - WORLD_NAME=${CORE_KEEPER_WORLD_NAME}
       - PASSWORD=${CORE_KEEPER_PASSWORD}
@@ -89,8 +89,6 @@ services:
       - BOX64_LOG=1
       - BOX64_SHOWSEGV=1
       - BOX64_SHOWBT=1
-      - MONO_THREADS_SUSPEND=preemptive
-      - MONO_GC_PARAMS=major=marksweep
     ports:
       - 17000:17000/udp
       - 17001:17001/udp
