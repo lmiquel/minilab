@@ -51,15 +51,6 @@ export const SERVICES = {
     monitored:     true,
   },
 
-  corekeeper: {
-    containerName: "core-keeper",
-    label:         "Core Keeper",
-    emoji:         "💎",
-    category:      "game",
-    controllable:  true,
-    monitored:     true,
-  },
-
   pingvinshare: {
     containerName: "pingvin-share",
     label:         "Pingvin Share",
