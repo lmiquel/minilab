@@ -51,10 +51,28 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  terraria: {
+    containerName: "terraria",
+    label:         "Terraria",
+    emoji:         "⛏️",
+    category:      "game",
+    controllable:  true,
+    monitored:     true,
+  },
+
   pingvinshare: {
     containerName: "pingvin-share",
     label:         "Pingvin Share",
     emoji:         "🐧",
+    category:      "apps",
+    controllable:  true,
+    monitored:     true,
+  },
+
+  rollerderbyscoreboard: {
+    containerName: "rollerderbyscoreboard",
+    label:         "Roller Derby Scoreboard (Carolina)",
+    emoji:         "🛼",
     category:      "apps",
     controllable:  true,
     monitored:     true,
@@ -73,6 +91,15 @@ export const SERVICES = {
     containerName: "docker-socket-proxy",
     label:         "Docker Socket Proxy",
     emoji:         "🔌",
+    category:      "utils",
+    controllable:  false,
+    monitored:     true,
+  },
+
+  githubrunner: {
+    containerName: "github-runner",
+    label:         "GitHub Runner",
+    emoji:         "🐙",
     category:      "utils",
     controllable:  false,
     monitored:     true,

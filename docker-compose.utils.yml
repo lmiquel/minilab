@@ -21,6 +21,29 @@ services:
     labels:
       - "minilab.service=docker-socket-proxy"
 
+  github-runner:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: github-runner
+    environment:
+      - TZ=Europe/Paris
+      - REPO_URL=${GITHUB_RUNNER_REPO_URL}
+      - ACCESS_TOKEN=${GITHUB_RUNNER_ACCESS_TOKEN}
+      - RUNNER_NAME=minilab-runner
+      - RUNNER_SCOPE=repo
+      - RUNNER_WORKDIR=/tmp/github-runner
+      - LABELS=self-hosted,arm64,minilab
+      - EPHEMERAL=false
+      - DISABLE_AUTO_UPDATE=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/ssd/github-runner/work:/tmp/github-runner
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.32
+    labels:
+      - "minilab.service=github-runner"
+
   mariadb:
     image: lscr.io/linuxserver/mariadb:latest
     container_name: mariadb
