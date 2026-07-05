@@ -91,9 +91,6 @@ services:
     ports:
       - 17000:17000/udp
       - 17001:17001/udp
-    dns:
-      - 1.1.1.1
-      - 1.0.0.1
     volumes:
       - /mnt/ssd/core-keeper/server-files:/home/steam/core-keeper-dedicated
       - /mnt/ssd/core-keeper/server-data:/home/steam/core-keeper-data
