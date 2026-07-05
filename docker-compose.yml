@@ -2,8 +2,6 @@ networks:
   minilab:
     name: minilab
     driver: bridge
-    driver_opts:
-      com.docker.network.driver.mtu: 1420
     ipam:
       config:
         - subnet: 172.20.0.0/24
