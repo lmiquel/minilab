@@ -22,7 +22,9 @@ services:
       - "minilab.service=pingvin-share"
 
   rollerderbyscoreboard:
-    image: jmeadows/rollerderbyscoreboard:latest
+    build:
+      context: ./rollerderby-scoreboard
+      dockerfile: Dockerfile
     container_name: rollerderbyscoreboard
     environment:
       - TZ=Europe/Paris
