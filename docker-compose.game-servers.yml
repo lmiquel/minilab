@@ -89,6 +89,8 @@ services:
       - BOX64_LOG=1
       - BOX64_SHOWSEGV=1
       - BOX64_SHOWBT=1
+      - MONO_THREADS_SUSPEND=preemptive
+      - MONO_GC_PARAMS=major=marksweep
     ports:
       - 17000:17000/udp
       - 17001:17001/udp
