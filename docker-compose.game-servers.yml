@@ -72,19 +72,21 @@ services:
       - "minilab.service=cobblemon"
 
   terraria:
-    image: yon09/terraria-server:latest
+    image: hexlo/terraria-server-docker:latest
     container_name: terraria
+    tty: true
+    stdin_open: true
     environment:
       - TZ=Europe/Paris
-      - WORLD_NAME=${TERRARIA_WORLD_NAME}
-      - WORLD_SIZE=2
-      - WORLD_DIFFICULTY=0
-      - MOTD=${TERRARIA_MOTD}
-      - LANGUAGE=en-US
-      - MAX_PLAYERS=8
-      - PASSWORD=${TERRARIA_PASSWORD}
+      - world=${TERRARIA_WORLD_NAME}.wld
+      - autocreate=2
+      - difficulty=0
+      - maxplayers=8
+      - password=${TERRARIA_PASSWORD}
+      - motd=${TERRARIA_MOTD}
+      - language=fr/FR
     volumes:
-      - /mnt/ssd/terraria:/opt/terraria-server/worlds
+      - /mnt/ssd/terraria/worlds:/root/.local/share/Terraria/Worlds
     ports:
       - "7777:7777/tcp"
     restart: unless-stopped

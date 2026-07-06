@@ -1,6 +1,7 @@
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
-RUN apk add --no-cache ant git
+RUN apt-get update && apt-get install -y --no-install-recommends ant git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
@@ -10,7 +11,7 @@ RUN git clone --depth 1 --branch ${SCOREBOARD_VERSION} \
 
 RUN ant compile
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
