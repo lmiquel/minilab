@@ -78,6 +78,15 @@ export const SERVICES = {
     monitored:     true,
   },
 
+  gitea: {
+    containerName: "gitea",
+    label:         "Gitea",
+    emoji:         "🍵",
+    category:      "apps",
+    controllable:  true,
+    monitored:     true,
+  },
+
   minilabhelper: {
     containerName: "minilab-helper",
     label:         "Minilab Helper",

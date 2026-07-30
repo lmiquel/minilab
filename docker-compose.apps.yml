@@ -43,6 +43,45 @@ services:
     labels:
       - "minilab.service=rollerderbyscoreboard"
 
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - TZ=Europe/Paris
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=mariadb:3306
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=${GITEA_DB_PASSWORD}
+      - GITEA__server__DOMAIN=${GITEA_HOSTNAME}
+      - GITEA__server__SSH_DOMAIN=${GITEA_HOSTNAME}
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__ROOT_URL=http://${GITEA_HOSTNAME}:3001/
+      - GITEA__server__LFS_START_SERVER=true
+      - GITEA__service__DISABLE_REGISTRATION=true
+      - GITEA__security__INSTALL_LOCK=true
+    volumes:
+      - /mnt/ssd/gitea/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.43
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    labels:
+      - "minilab.service=gitea"
+      
   minilab-helper:
     build:
       context: ./minilab-helper
