@@ -52,6 +52,9 @@ services:
       - PGID=1000
       - TZ=Europe/Paris
       - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=${GITEA_DB_PASSWORD}
     volumes:
       - /mnt/ssd/mariadb/config:/config
     restart: unless-stopped
