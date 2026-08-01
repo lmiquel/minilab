@@ -21,6 +21,7 @@ import {
   groupByCategory,
 } from "./services-docker";
 import { getConnectedPeers, getAllPeers } from "./wireguard";
+import { getMiniPrintOverview, MiniPrintOverview, MINIPRINT_PEER_NAME } from "./miniprint";
 
 const execAsync = promisify(exec);
 const OWNER_ID = process.env.DISCORD_OWNER_ID!;
@@ -77,6 +78,10 @@ export const commands = [
     .setDescription("Affiche les peers WireGuard actuellement connectés"),
 
   new SlashCommandBuilder()
+    .setName("miniprint")
+    .setDescription("Statut de MiniPrint : température, ressources, Klipper/Mainsail/Crowsnest"),
+
+  new SlashCommandBuilder()
     .setName("shutdown")
     .setDescription("⚠️  Éteint complètement le Raspberry Pi (arrête tous les services d'abord)"),
 ].map((cmd) => cmd.toJSON());
@@ -121,6 +126,7 @@ export function setupCommandHandler(client: Client, monitor: MonitorService): vo
         case "restart":   await handleRestart(interaction, monitor);  break;
         case "resources": await handleResources(interaction);         break;
         case "vpn":       await handleVpn(interaction);               break;
+        case "miniprint": await handleMiniPrint(interaction);         break;
         case "shutdown":  await handleShutdown(interaction, monitor); break;
       }
     } catch (err) {
@@ -143,11 +149,12 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
 
   // ── Embed 1 : Statut & Ressources ────────────────────────────────────────
 
-  const [statuses, host, temp, storage] = await Promise.all([
+  const [statuses, host, temp, storage, embedMiniPrint] = await Promise.all([
     dockerManager.getAllStatuses(),
     dockerManager.getHostResources().catch(() => null),
     dockerManager.getRpiTemperature().catch(() => null),
     dockerManager.getStorageUsage().catch(() => null),
+    buildMiniPrintEmbed(),
   ]);
 
   const statusMap = new Map<ServiceName, ContainerStatus>(statuses.map((s) => [s.name, s]));
@@ -241,7 +248,7 @@ async function handleOverview(interaction: ChatInputCommandInteraction): Promise
     }
   }
 
-  await interaction.editReply({ embeds: [embedStatus, embedVpn] });
+  await interaction.editReply({ embeds: [embedStatus, embedVpn, embedMiniPrint] });
 }
 
 async function handleStatus(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -396,6 +403,118 @@ async function handleVpn(interaction: ChatInputCommandInteraction): Promise<void
     }
   }
 
+  await interaction.editReply({ embeds: [embed] });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  MiniPrint
+// ─────────────────────────────────────────────────────────────────────────────
+
+function klippyStateEmoji(state: string | null): string {
+  switch (state) {
+    case "ready":              return "🟢";
+    case "startup":            return "🟡";
+    case "shutdown":
+    case "error":              return "🔴";
+    default:                   return "⚫"; // injoignable / inconnu
+  }
+}
+
+function formatUptime(totalSeconds: number): string {
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  if (days > 0) return `${days}j ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  return `${minutes}min`;
+}
+
+async function buildMiniPrintEmbed(): Promise<EmbedBuilder> {
+  const data: MiniPrintOverview = await getMiniPrintOverview();
+  const peer = getAllPeers().find((p) => p.name === MINIPRINT_PEER_NAME);
+
+  const peerLine = (): string => {
+    if (!peer) return "❓ Peer non trouvé dans WG_PEERS";
+    const hs = peer.lastHandshake
+      ? peer.lastHandshake.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })
+      : "jamais connecté";
+    return `${peer.connected ? "🟢 connecté" : "⚫ pas de handshake récent"}\nDernier handshake : \`${hs}\``;
+  };
+
+  const embed = new EmbedBuilder()
+    .setTitle("🖨️ MiniPrint — Statut & Ressources")
+    .setTimestamp();
+
+  if (!data.reachable) {
+    embed
+      .setColor(Colors.Grey)
+      .setDescription("❌ MiniPrint est injoignable (VPN down, ou Pi éteint).")
+      .addFields({ name: "🔒 VPN", value: peerLine(), inline: false });
+    return embed;
+  }
+
+  const tempStr = data.cpuTempC !== null
+    ? `${data.cpuTempC >= 70 ? "🔴" : data.cpuTempC >= 60 ? "🟡" : "🟢"} **${data.cpuTempC}°C**`
+    : "❌ indisponible";
+
+  const cpuStr = data.cpuPercent !== null ? `\`${data.cpuPercent}%\`` : "❌";
+
+  const memStr = data.moonrakerMemMB !== null
+    ? `Moonraker \`${data.moonrakerMemMB}MB\`${data.totalMemMB !== null ? ` • RAM totale \`${data.totalMemMB}MB\`` : ""}`
+    : "❌ indisponible";
+
+  const storageStr = data.storage
+    ? `💾 \`${data.storage.usedGB}/${data.storage.totalGB} GB (${data.storage.percent}%)\``
+    : "💾 ❌ indisponible";
+
+  const uptimeStr = data.uptimeSec !== null ? formatUptime(data.uptimeSec) : "❌";
+
+  embed
+    .setColor(data.klippyState === "ready" ? Colors.Green : Colors.Orange)
+    .setDescription(
+      `🌡️ Température : ${tempStr}\n` +
+      `🖥️ CPU : ${cpuStr}  •  RAM : ${memStr}\n` +
+      `${storageStr}\n` +
+      `⏱️ Uptime Moonraker : \`${uptimeStr}\``
+    );
+
+  if (data.throttled && data.throttled.bits !== 0) {
+    embed.addFields({
+      name: "⚠️ Alimentation",
+      value: `Anomalie détectée (vcgencmd \`0x${data.throttled.bits.toString(16)}\`) — sous-tension ou bridage thermique probable`,
+      inline: false,
+    });
+  }
+
+  embed.addFields(
+    {
+      name: "🌐 Mainsail / Moonraker",
+      value: `${data.mainsailUp ? "🟢" : "🔴"} Mainsail  •  ${data.moonrakerUp ? "🟢" : "🔴"} Moonraker`,
+      inline: true,
+    },
+    {
+      name: "🔩 Klipper",
+      value: `${klippyStateEmoji(data.klippyState)} \`${data.klippyState ?? "injoignable"}\``,
+      inline: true,
+    },
+    {
+      name: "📷 Crowsnest",
+      value: data.crowsnestUp ? "🟢 actif" : "🔴 injoignable",
+      inline: true,
+    },
+    {
+      name: "🔒 VPN",
+      value: peerLine(),
+      inline: false,
+    },
+  );
+
+  return embed;
+}
+
+async function handleMiniPrint(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+  const embed = await buildMiniPrintEmbed();
   await interaction.editReply({ embeds: [embed] });
 }
 
