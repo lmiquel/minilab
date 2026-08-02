@@ -1,8 +1,8 @@
-import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
-import { MonitorService } from "./monitor";
-import { setupCommandHandler, registerCommands } from "./commands";
-import { startWireGuardWatcher, loadPeerNames } from "./wireguard";
+import "dotenv/config";
+import { commandsManager } from "./managers/commands-manager/commands-manager";
+import { monitoringManager } from "./managers/monitoring-manager/monitoring-manager";
+import { wireguardManager } from "./managers/wireguard-manager/wireguard-manager";
 
 const REQUIRED_ENV = ["DISCORD_TOKEN", "DISCORD_OWNER_ID", "WG_PEERS"];
 for (const key of REQUIRED_ENV) {
@@ -13,7 +13,6 @@ for (const key of REQUIRED_ENV) {
 }
 
 const TOKEN = process.env.DISCORD_TOKEN!;
-const OWNER_ID = process.env.DISCORD_OWNER_ID!;
 const PEERS = process.env.WG_PEERS!;
 
 const client = new Client({
@@ -23,41 +22,33 @@ const client = new Client({
   ],
 });
 
-const monitor = new MonitorService(client);
-
 client.once("ready", async (readyClient) => {
   console.log(`[Bot] Connecté en tant que ${readyClient.user.tag}`);
 
-  // Enregistrement des commandes slash
   try {
-    await registerCommands(TOKEN, readyClient.user.id);
+    await commandsManager.registerCommands(TOKEN, readyClient.user.id);
   } catch (err) {
     console.error("[Bot] Erreur enregistrement commandes:", err);
   }
 
-  // Initialisation du monitor (récupère l'objet User de l'owner)
-  await monitor.init();
+  await monitoringManager.init(client);
 
-  // Chargement des noms de peers WireGuard
   const peers = (PEERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
   if (peers.length > 0) {
-    await loadPeerNames(peers);
+    await wireguardManager.loadPeerNames(peers);
   }
 
-  // Démarrage des services de fond
-  monitor.start();
-  startWireGuardWatcher(monitor);
+  monitoringManager.start();
+  wireguardManager.start();
 
-  // Message de démarrage à l'owner
-  await monitor.dm(
+  await monitoringManager.dm(
     "✅ **minilab-helper démarré !**\n" +
-    "Utilise `/status` pour voir l'état des serveurs.\n" +
-    "Commandes disponibles : `/status` `/vpn` `/resources` `/stop` `/start` `/restart` `/shutdown`"
+    "Utilise `/overview` pour voir l'état des serveurs.\n" +
+    "Commandes disponibles : `/status` `/vpn` `/resources` `/miniprint` `/stop` `/start` `/restart` `/shutdown`"
   );
 });
 
-// Gestion des commandes slash
-setupCommandHandler(client, monitor);
+commandsManager.setupCommandHandler(client);
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Gestion des erreurs non catchées

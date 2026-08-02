@@ -3,11 +3,13 @@
 peer-configs/
 
 # Node
+node_modules/
 bot/node_modules/
 bot/dist/
 
 # Build
 *.zip
+.claude/
 
 # Backups locaux
 *.sql.gz
