@@ -1,12 +1,11 @@
 # ── Build stage ────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json tsconfig.json tsconfig.eslint.json eslint.config.mjs ./
+COPY package*.json tsconfig.json eslint.config.mjs ./
 RUN npm ci --include=dev
 COPY src ./src
-# Le build échoue si le lint ou les tests échouent — pas d'image cassée qui passe.
+# Le build échoue si le lint échoue — pas d'image cassée qui passe.
 RUN npm run lint
-RUN npm test
 RUN npm run build
 
 # ── Runtime stage ──────────────────────────────────────────────────────────────

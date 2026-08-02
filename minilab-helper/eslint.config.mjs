@@ -13,13 +13,13 @@ export default tseslint.config(
     plugins: { import: importPlugin },
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: "./tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
     settings: {
       "import/resolver": {
-        typescript: { project: "./tsconfig.eslint.json" },
+        typescript: { project: "./tsconfig.json" },
       },
     },
     rules: {
