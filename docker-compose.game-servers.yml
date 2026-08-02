@@ -15,10 +15,6 @@ services:
     volumes:
       - /mnt/ssd/valheim:/root/.config/unity3d/IronGate/Valheim
       - /mnt/ssd/valheim/backups:/data/backups
-    ports:
-      - "2456:2456/udp"
-      - "2457:2457/udp"
-      - "2458:2458/udp"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/2456"]
@@ -26,9 +22,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 240s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.20
+    network_mode: "service:wireguard"
+    depends_on:
+      wireguard:
+        condition: service_healthy
     labels:
       - "minilab.service=valheim"
 
@@ -56,8 +53,6 @@ services:
       - SPAWN_MONSTERS=false
     volumes:
       - /mnt/ssd/cobblemon:/data
-    ports:
-      - "25565:25565/tcp"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/25565"]
@@ -65,9 +60,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 240s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.22
+    network_mode: "service:wireguard"
+    depends_on:
+      wireguard:
+        condition: service_healthy
     labels:
       - "minilab.service=cobblemon"
 
@@ -87,8 +83,6 @@ services:
       - language=fr/FR
     volumes:
       - /mnt/ssd/terraria/worlds:/root/.local/share/Terraria/Worlds
-    ports:
-      - "7777:7777/tcp"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/7777"]
@@ -96,8 +90,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 120s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.21
+    network_mode: "service:wireguard"
+    depends_on:
+      wireguard:
+        condition: service_healthy
     labels:
       - "minilab.service=terraria"

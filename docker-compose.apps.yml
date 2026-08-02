@@ -15,9 +15,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.41
+    network_mode: "service:wireguard"
+    depends_on:
+      wireguard:
+        condition: service_healthy
     labels:
       - "minilab.service=pingvin-share"
 
@@ -28,8 +29,6 @@ services:
     container_name: rollerderbyscoreboard
     environment:
       - TZ=Europe/Paris
-    ports:
-      - "8000:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000"]
@@ -37,9 +36,10 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.42
+    network_mode: "service:wireguard"
+    depends_on:
+      wireguard:
+        condition: service_healthy
     labels:
       - "minilab.service=rollerderbyscoreboard"
 
@@ -58,6 +58,7 @@ services:
       - GITEA__server__DOMAIN=${GITEA_HOSTNAME}
       - GITEA__server__SSH_DOMAIN=${GITEA_HOSTNAME}
       - GITEA__server__SSH_PORT=2222
+      - GITEA__server__HTTP_PORT=3001
       - GITEA__server__ROOT_URL=http://${GITEA_HOSTNAME}:3001/
       - GITEA__server__LFS_START_SERVER=true
       - GITEA__service__DISABLE_REGISTRATION=true
@@ -68,16 +69,16 @@ services:
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 30s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.43
+    network_mode: "service:wireguard"
     depends_on:
       mariadb:
+        condition: service_healthy
+      wireguard:
         condition: service_healthy
     labels:
       - "minilab.service=gitea"
@@ -106,11 +107,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    networks:
-      minilab:
-        ipv4_address: 172.20.0.30
+    network_mode: "service:wireguard"
     depends_on:
       docker-socket-proxy:
+        condition: service_healthy
+      wireguard:
         condition: service_healthy
     labels:
       - "minilab.service=minilab-helper"
