@@ -1,6 +1,6 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { formatDateFr } from "../../../../commons/helpers/format-date-fr";
-import { wireguardManager } from "../../../wireguard-manager/wireguard-manager";
+import { formatDateFr } from "../../../../../commons/helpers/format-date-fr";
+import { wireguardManager } from "../../../../wireguard-manager/wireguard-manager";
 
 export function buildVpnEmbed(): EmbedBuilder {
   const peers = wireguardManager.getConnectedPeers();

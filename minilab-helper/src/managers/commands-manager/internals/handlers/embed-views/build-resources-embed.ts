@@ -1,10 +1,10 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { groupByCategory } from "../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
-import { MONITORED_SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
-import { SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
-import { CATEGORY_LABELS } from "../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
-import { dockerManager } from "../../../docker-manager/docker-manager";
-import { tempEmoji } from "../helpers/temp-emoji";
+import { groupByCategory } from "../../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
+import { MONITORED_SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
+import { SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { CATEGORY_LABELS } from "../../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
+import { dockerManager } from "../../../../docker-manager/docker-manager";
+import { tempEmoji } from "../../helpers/temp-emoji";
 
 export async function buildResourcesEmbed(): Promise<EmbedBuilder> {
   const embed = new EmbedBuilder().setTitle("📈 Ressources CPU / RAM — minilab").setColor(Colors.Green).setTimestamp();

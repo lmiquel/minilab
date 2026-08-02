@@ -1,8 +1,8 @@
 import type { ChatInputCommandInteraction } from "discord.js";
-import type { ServiceName } from "../../../commons/types/service-name";
-import { dockerManager } from "../../docker-manager/docker-manager";
-import { monitoringManager } from "../../monitoring-manager/monitoring-manager";
-import { SERVICES } from "../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import type { ServiceName } from "../../../../commons/types/service-name";
+import { dockerManager } from "../../../docker-manager/docker-manager";
+import { monitoringManager } from "../../../monitoring-manager/monitoring-manager";
+import { SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
 
 export async function handleRestart(interaction: ChatInputCommandInteraction): Promise<void> {
   const service = interaction.options.getString("service", true) as ServiceName;

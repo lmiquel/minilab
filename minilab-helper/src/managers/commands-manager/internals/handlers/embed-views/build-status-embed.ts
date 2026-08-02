@@ -1,10 +1,10 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { groupByCategory } from "../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
-import { MONITORED_SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
-import { SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
-import { CATEGORY_LABELS } from "../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
-import { dockerManager } from "../../../docker-manager/docker-manager";
-import { renderContainerStateLine } from "../helpers/render-container-state-line";
+import { groupByCategory } from "../../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
+import { MONITORED_SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
+import { SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { CATEGORY_LABELS } from "../../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
+import { dockerManager } from "../../../../docker-manager/docker-manager";
+import { renderContainerStateLine } from "../../helpers/render-container-state-line";
 
 export async function buildStatusEmbed(): Promise<EmbedBuilder> {
   const statuses = await dockerManager.getAllStatuses();

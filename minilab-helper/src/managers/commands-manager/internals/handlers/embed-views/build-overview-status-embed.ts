@@ -1,13 +1,13 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { ContainerStatus } from "../../../../commons/types/container-status";
-import { ServiceName } from "../../../../commons/types/service-name";
-import { groupByCategory } from "../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
-import { MONITORED_SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
-import { SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
-import { CATEGORY_LABELS } from "../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
-import { dockerManager } from "../../../docker-manager/docker-manager";
-import { renderContainerStateLine } from "../helpers/render-container-state-line";
-import { tempEmoji } from "../helpers/temp-emoji";
+import { ContainerStatus } from "../../../../../commons/types/container-status";
+import { ServiceName } from "../../../../../commons/types/service-name";
+import { groupByCategory } from "../../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
+import { MONITORED_SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
+import { SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { CATEGORY_LABELS } from "../../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
+import { dockerManager } from "../../../../docker-manager/docker-manager";
+import { renderContainerStateLine } from "../../helpers/render-container-state-line";
+import { tempEmoji } from "../../helpers/temp-emoji";
 
 export async function buildOverviewStatusEmbed(): Promise<EmbedBuilder> {
   const [statuses, host, temp, storage] = await Promise.all([
