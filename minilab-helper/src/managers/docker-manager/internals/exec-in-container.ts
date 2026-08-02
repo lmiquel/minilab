@@ -1,6 +1,6 @@
 import type Dockerode from "dockerode";
 import type { ServiceName } from "../../../commons/types/service-name";
-import { SERVICES } from "../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { SERVICES } from "../../../dictionaries/docker-services-dictionary/docker-services-dictionary";
 
 /**
  * Exécute une commande dans un conteneur et retourne le stdout.

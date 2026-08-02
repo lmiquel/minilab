@@ -1,9 +1,9 @@
-import type { ChatInputCommandInteraction } from "discord.js";
 import { exec } from "child_process";
+import type { ChatInputCommandInteraction } from "discord.js";
 import { promisify } from "util";
+import { ALL_SERVICES } from "../../../../dictionaries/docker-services-dictionary/derived/all-services";
 import { dockerManager } from "../../../docker-manager/docker-manager";
 import { monitoringManager } from "../../../monitoring-manager/monitoring-manager";
-import { ALL_SERVICES } from "../../../../dictionnaries/docker-services-dictionnary/derived/all-services";
 
 const execAsync = promisify(exec);
 

@@ -2,7 +2,7 @@ import type Dockerode from "dockerode";
 import type { ServiceName } from "../../../commons/types/service-name";
 import type { ContainerStatus } from "../../../commons/types/container-status";
 import type { HealthStatus } from "../../../commons/types/health-status";
-import { SERVICES } from "../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { SERVICES } from "../../../dictionaries/docker-services-dictionary/docker-services-dictionary";
 
 /** Renvoie le statut d'un conteneur */
 export async function getContainerStatus(docker: Dockerode, service: ServiceName): Promise<ContainerStatus> {

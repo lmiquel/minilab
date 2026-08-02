@@ -2,7 +2,7 @@ import type Dockerode from "dockerode";
 import type { ContainerStats } from "dockerode";
 import type { ServiceName } from "../../../commons/types/service-name";
 import type { ResourceUsage } from "../../../commons/types/resource-usage";
-import { SERVICES } from "../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { SERVICES } from "../../../dictionaries/docker-services-dictionary/docker-services-dictionary";
 
 /** Récupère les stats CPU/RAM (snapshot instantané) */
 export async function getResourceUsage(docker: Dockerode, service: ServiceName): Promise<ResourceUsage> {

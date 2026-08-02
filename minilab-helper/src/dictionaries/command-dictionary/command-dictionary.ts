@@ -1,8 +1,9 @@
-import { SlashCommandBuilder, SlashCommandStringOption } from "discord.js";
+import type { SlashCommandStringOption } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { CommandName } from "./types/command-name";
 import type { CommandSpec } from "./types/command-spec";
-import { CONTROLLABLE_SERVICES } from "../docker-services-dictionnary/derived/controllable-services";
-import { toDiscordChoices } from "../docker-services-dictionnary/derived/to-discord-choices";
+import { CONTROLLABLE_SERVICES } from "../docker-services-dictionary/derived/controllable-services";
+import { toDiscordChoices } from "../docker-services-dictionary/derived/to-discord-choices";
 
 const SERVICE_CHOICES = toDiscordChoices(CONTROLLABLE_SERVICES);
 

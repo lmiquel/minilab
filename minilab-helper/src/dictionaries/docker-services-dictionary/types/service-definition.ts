@@ -1,4 +1,4 @@
-import type { ServiceCategory } from "../../service-categories-dictionnary/types/service-category";
+import type { ServiceCategory } from "../../service-categories-dictionary/types/service-category";
 
 export interface ServiceDefinition {
   containerName: string;

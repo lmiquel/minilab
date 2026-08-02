@@ -3,7 +3,7 @@ import type { ContainerStatus } from "../../../commons/types/container-status";
 import type { ServiceState } from "../types/service-state";
 import { HealthStatus } from "../../../commons/types/health-status";
 import { healthEmoji } from "../../../commons/helpers/health-emoji";
-import { SERVICES } from "../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
+import { SERVICES } from "../../../dictionaries/docker-services-dictionary/docker-services-dictionary";
 
 const RESTART_ALERT_THRESHOLD = 3;
 

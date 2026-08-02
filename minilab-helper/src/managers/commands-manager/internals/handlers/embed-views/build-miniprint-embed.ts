@@ -1,7 +1,7 @@
 import { Colors, EmbedBuilder } from "discord.js";
 import { formatDateFr } from "../../../../../commons/helpers/format-date-fr";
 import { KlippyState } from "../../../../../commons/types/klippy-state";
-import { MiniPrintOverview } from "../../../../../commons/types/miniprint-overview";
+import type { MiniPrintOverview } from "../../../../../commons/types/miniprint-overview";
 import { miniPrintManager } from "../../../../miniprint-manager/miniprint-manager";
 import { wireguardManager } from "../../../../wireguard-manager/wireguard-manager";
 import { formatUptime } from "../../helpers/format-uptime";

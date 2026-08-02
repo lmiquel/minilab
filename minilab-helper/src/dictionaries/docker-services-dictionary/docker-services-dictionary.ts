@@ -1,5 +1,5 @@
 import type { ServiceDefinition } from "./types/service-definition";
-import { ServiceCategory } from "../service-categories-dictionnary/types/service-category";
+import { ServiceCategory } from "../service-categories-dictionary/types/service-category";
 
 export const SERVICES = {
   valheim: {

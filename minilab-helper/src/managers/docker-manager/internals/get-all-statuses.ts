@@ -1,6 +1,6 @@
 import type Dockerode from "dockerode";
 import type { ContainerStatus } from "../../../commons/types/container-status";
-import { MONITORED_SERVICES } from "../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
+import { MONITORED_SERVICES } from "../../../dictionaries/docker-services-dictionary/derived/monitored-services";
 import { getContainerStatus } from "./get-container-status";
 
 /** Renvoie le statut de tous les services surveillés */

@@ -1,5 +1,5 @@
 import { healthEmoji } from "../../../../commons/helpers/health-emoji";
-import { ContainerStatus } from "../../../../commons/types/container-status";
+import type { ContainerStatus } from "../../../../commons/types/container-status";
 import { HealthStatus } from "../../../../commons/types/health-status";
 
 /** Si healthcheck dispo → on affiche uniquement son résultat (running implicite).

@@ -1,6 +1,7 @@
-import { Client, REST, Routes } from "discord.js";
-import { buildSlashCommands } from "../../dictionnaries/command-dictionary/derived/build-slash-commands";
-import type { CommandName } from "../../dictionnaries/command-dictionary/types/command-name";
+import type { Client} from "discord.js";
+import { REST, Routes } from "discord.js";
+import { buildSlashCommands } from "../../dictionaries/command-dictionary/derived/build-slash-commands";
+import type { CommandName } from "../../dictionaries/command-dictionary/types/command-name";
 import { COMMAND_HANDLERS } from "./internals/command-handlers";
 import { isOwner } from "./internals/helpers/is-owner";
 import { rejectUnauthorized } from "./internals/helpers/reject-unauthorized";

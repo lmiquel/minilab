@@ -1,9 +1,7 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { groupByCategory } from "../../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
-import { MONITORED_SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
-import { SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
-import { CATEGORY_LABELS } from "../../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
+import { MONITORED_SERVICES } from "../../../../../dictionaries/docker-services-dictionary/derived/monitored-services";
 import { dockerManager } from "../../../../docker-manager/docker-manager";
+import { addGroupedServiceFields } from "../../helpers/add-grouped-service-fields";
 import { tempEmoji } from "../../helpers/temp-emoji";
 
 export async function buildResourcesEmbed(): Promise<EmbedBuilder> {
@@ -17,33 +15,14 @@ export async function buildResourcesEmbed(): Promise<EmbedBuilder> {
     embed.setDescription("🌡️ Température RPi : ❌ indisponible");
   }
 
-  const grouped = groupByCategory(MONITORED_SERVICES);
-
-  for (const [cat, services] of grouped) {
-    embed.addFields({
-      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: `**${CATEGORY_LABELS[cat]}**`,
-      inline: false,
-    });
-
-    for (const service of services) {
-      const { emoji, label } = SERVICES[service];
-      try {
-        const res = await dockerManager.getResourceUsage(service);
-        embed.addFields({
-          name: `${emoji} ${label}`,
-          value: `CPU : \`${res.cpuPercent}%\`\n` + `RAM : \`${res.memUsageMB}MB (${res.memPercent}%)\``,
-          inline: true,
-        });
-      } catch {
-        embed.addFields({
-          name: `${emoji} ${label}`,
-          value: "❌ Stats indisponibles\n(conteneur arrêté ?)",
-          inline: true,
-        });
-      }
+  await addGroupedServiceFields(embed, MONITORED_SERVICES, async (service) => {
+    try {
+      const res = await dockerManager.getResourceUsage(service);
+      return `CPU : \`${res.cpuPercent}%\`\n` + `RAM : \`${res.memUsageMB}MB (${res.memPercent}%)\``;
+    } catch {
+      return "❌ Stats indisponibles\n(conteneur arrêté ?)";
     }
-  }
+  });
 
   return embed;
 }

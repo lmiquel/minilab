@@ -1,9 +1,7 @@
 import { Colors, EmbedBuilder } from "discord.js";
-import { groupByCategory } from "../../../../../dictionnaries/docker-services-dictionnary/derived/group-by-category";
-import { MONITORED_SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/derived/monitored-services";
-import { SERVICES } from "../../../../../dictionnaries/docker-services-dictionnary/docker-services-dictionnary";
-import { CATEGORY_LABELS } from "../../../../../dictionnaries/service-categories-dictionnary/service-categories-dictionnary";
+import { MONITORED_SERVICES } from "../../../../../dictionaries/docker-services-dictionary/derived/monitored-services";
 import { dockerManager } from "../../../../docker-manager/docker-manager";
+import { addGroupedServiceFields } from "../../helpers/add-grouped-service-fields";
 import { renderContainerStateLine } from "../../helpers/render-container-state-line";
 
 export async function buildStatusEmbed(): Promise<EmbedBuilder> {
@@ -12,27 +10,11 @@ export async function buildStatusEmbed(): Promise<EmbedBuilder> {
 
   const embed = new EmbedBuilder().setTitle("📊 Statut du minilab").setColor(Colors.Blurple).setTimestamp();
 
-  const grouped = groupByCategory(MONITORED_SERVICES);
-
-  for (const [cat, services] of grouped) {
-    embed.addFields({
-      name: "​", // zero-width space pour satisfaire Discord (pas de field vide)
-      value: `**${CATEGORY_LABELS[cat]}**`,
-      inline: false,
-    });
-
-    for (const s of services) {
-      const status = statusMap.get(s);
-      const { emoji, label } = SERVICES[s];
-      if (!status) continue;
-
-      embed.addFields({
-        name: `${emoji} ${label}`,
-        value: `${renderContainerStateLine(status)}  •  🔁 ${status.restartCount}`,
-        inline: true,
-      });
-    }
-  }
+  await addGroupedServiceFields(embed, MONITORED_SERVICES, (service) => {
+    const status = statusMap.get(service);
+    if (!status) return null;
+    return `${renderContainerStateLine(status)}  •  🔁 ${status.restartCount}`;
+  });
 
   return embed;
 }
