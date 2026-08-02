@@ -42,3 +42,21 @@ pub fn get_json(client: Client, path: String) -> Result(String, DockerError) {
     Error(err) -> Error(HttpError(string.inspect(err)))
   }
 }
+
+/// POST à corps vide. 204 et 304 (déjà démarré/arrêté) sont des succès.
+pub fn post_empty(client: Client, path: String) -> Result(Nil, DockerError) {
+  let req =
+    request.new()
+    |> request.set_scheme(http.Http)
+    |> request.set_host(client.host)
+    |> request.set_port(client.port)
+    |> request.set_method(http.Post)
+    |> request.set_path(path)
+    |> request.set_body("")
+
+  case httpc.send(req) {
+    Ok(resp) if resp.status == 204 || resp.status == 304 -> Ok(Nil)
+    Ok(resp) -> Error(UnexpectedStatus(resp.status, resp.body))
+    Error(err) -> Error(HttpError(string.inspect(err)))
+  }
+}

@@ -41,6 +41,7 @@ pub fn register_commands(bot: bot.Bot) -> Nil {
 /// commande. Équivalent du listener installé par setupCommandHandler.
 pub fn handle_interaction(
   client: docker_manager.Client,
+  bot: bot.Bot,
   owner_id: Snowflake(snowflake.User),
   pkt: InteractionCreatePacketData,
 ) -> Nil {
@@ -49,7 +50,7 @@ pub fn handle_interaction(
     True ->
       case pkt.data {
         ApplicationCommand(name: name, ..) ->
-          command_handlers.dispatch(client, name, pkt)
+          command_handlers.dispatch(client, bot, owner_id, name, pkt)
         _ -> Nil
       }
   }

@@ -7,6 +7,9 @@ import managers/docker_manager/internals/create_docker_client
 import managers/docker_manager/internals/get_all_statuses
 import managers/docker_manager/internals/get_resource_usage
 import managers/docker_manager/internals/get_rpi_temperature
+import managers/docker_manager/internals/restart_service
+import managers/docker_manager/internals/start_service
+import managers/docker_manager/internals/stop_service
 import managers/docker_manager/types/docker_error.{type DockerError}
 
 pub type Client =
@@ -31,4 +34,25 @@ pub fn get_resource_usage(
 
 pub fn get_rpi_temperature() -> Result(Int, Nil) {
   get_rpi_temperature.get_rpi_temperature()
+}
+
+pub fn start_service(
+  client: Client,
+  service: ServiceName,
+) -> Result(Nil, DockerError) {
+  start_service.start_service(client, service)
+}
+
+pub fn stop_service(
+  client: Client,
+  service: ServiceName,
+) -> Result(Nil, DockerError) {
+  stop_service.stop_service(client, service)
+}
+
+pub fn restart_service(
+  client: Client,
+  service: ServiceName,
+) -> Result(Nil, DockerError) {
+  restart_service.restart_service(client, service)
 }

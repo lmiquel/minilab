@@ -38,7 +38,7 @@ pub fn main() -> Nil {
       }
 
       InteractionCreatePacket(pkt) ->
-        commands_manager.handle_interaction(docker, owner_id, pkt)
+        commands_manager.handle_interaction(docker, bot, owner_id, pkt)
 
       _ -> Nil
     }

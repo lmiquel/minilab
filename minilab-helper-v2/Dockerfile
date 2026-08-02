@@ -1,6 +1,8 @@
 # ── Build stage ────────────────────────────────────────────────────────────────
 FROM ghcr.io/gleam-lang/gleam:v1.18.1-erlang-alpine AS builder
 WORKDIR /app
+# git est nécessaire pour résoudre la dépendance git discord_gleam (fork en attente de PR amont).
+RUN apk add --no-cache git
 COPY gleam.toml manifest.toml ./
 RUN gleam deps download
 COPY src ./src

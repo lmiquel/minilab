@@ -92,3 +92,45 @@ pub fn get_service(name: ServiceName) -> ServiceDefinition {
   let assert Ok(definition) = list.key_find(services(), name)
   definition
 }
+
+/// Identifiants canoniques v1 (clés du dictionnaire `SERVICES`), pas les
+/// noms de conteneur — diffèrent pour pingvinshare, minilabhelper,
+/// dockersocketproxy et githubrunner.
+pub fn service_name_to_string(name: ServiceName) -> String {
+  case name {
+    Valheim -> "valheim"
+    Cobblemon -> "cobblemon"
+    Terraria -> "terraria"
+    PingvinShare -> "pingvinshare"
+    RollerDerbyScoreboard -> "rollerderbyscoreboard"
+    Gitea -> "gitea"
+    MinilabHelper -> "minilabhelper"
+    DockerSocketProxy -> "dockersocketproxy"
+    GithubRunner -> "githubrunner"
+    Mariadb -> "mariadb"
+    Wireguard -> "wireguard"
+    Pihole -> "pihole"
+    Cloudflared -> "cloudflared"
+    Duckdns -> "duckdns"
+  }
+}
+
+pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
+  case value {
+    "valheim" -> Ok(Valheim)
+    "cobblemon" -> Ok(Cobblemon)
+    "terraria" -> Ok(Terraria)
+    "pingvinshare" -> Ok(PingvinShare)
+    "rollerderbyscoreboard" -> Ok(RollerDerbyScoreboard)
+    "gitea" -> Ok(Gitea)
+    "minilabhelper" -> Ok(MinilabHelper)
+    "dockersocketproxy" -> Ok(DockerSocketProxy)
+    "githubrunner" -> Ok(GithubRunner)
+    "mariadb" -> Ok(Mariadb)
+    "wireguard" -> Ok(Wireguard)
+    "pihole" -> Ok(Pihole)
+    "cloudflared" -> Ok(Cloudflared)
+    "duckdns" -> Ok(Duckdns)
+    _ -> Error(Nil)
+  }
+}
