@@ -47,14 +47,19 @@ export async function checkStatus(
   }
 
   // ── Changement de santé (healthy / unhealthy / starting) ─────────────
+  // Seulement pertinent quand le service est censé tourner : un conteneur
+  // arrêté volontairement garde souvent son dernier statut de healthcheck
+  // à "unhealthy", ce qui n'a rien d'anormal et ne doit pas alerter.
   if (prev.lastHealth !== status.health && status.health !== HealthStatus.None) {
-    if (status.health === HealthStatus.Unhealthy) {
-      await dm(
-        `${healthEmoji(status.health)} **${label}** est \`unhealthy\` !\n` +
-        `Vérifie les logs : \`docker logs --tail 50 ${SERVICES[status.name].containerName}\``
-      );
-    } else if (status.health === HealthStatus.Healthy && prev.lastHealth === HealthStatus.Unhealthy) {
-      await dm(`${healthEmoji(status.health)} **${label}** est de nouveau \`healthy\`.`);
+    if (status.state === "running") {
+      if (status.health === HealthStatus.Unhealthy) {
+        await dm(
+          `${healthEmoji(status.health)} **${label}** est \`unhealthy\` !\n` +
+          `Vérifie les logs : \`docker logs --tail 50 ${SERVICES[status.name].containerName}\``
+        );
+      } else if (status.health === HealthStatus.Healthy && prev.lastHealth === HealthStatus.Unhealthy) {
+        await dm(`${healthEmoji(status.health)} **${label}** est de nouveau \`healthy\`.`);
+      }
     }
     prev.lastHealth = status.health;
   }
