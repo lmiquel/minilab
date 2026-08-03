@@ -10,6 +10,8 @@ import gleam/erlang/charlist
 import gleam/erlang/process
 import gleam/list
 import gleam/option
+import gleam/string
+import logging
 import minilab_helper/commands/private
 import minilab_helper/commands/private/embed_views
 import minilab_helper/dictionaries/docker_services.{all_services, get_service}
@@ -135,22 +137,15 @@ pub fn handle_overview(
     wireguard.get_all_peers(wireguard_state)
     |> embed_views.build_overview_vpn_embed()
 
-  let status_result = process.receive(status_subj, within: 6000)
-  let miniprint_embed_result = process.receive(miniprint_subj, within: 6000)
+  let status_result = process.receive(status_subj, within: 8000)
+  let miniprint_embed_result = process.receive(miniprint_subj, within: 8000)
 
-  case status_result, miniprint_embed_result {
-    Ok(Ok(status_embed)), Ok(miniprint_embed) -> {
-      let _ =
-        interaction.edit_response(
-          pkt,
-          message: message.new("")
-            |> message.add_embed(status_embed)
-            |> message.add_embed(vpn_embed)
-            |> message.add_embed(miniprint_embed),
-        )
-      Nil
-    }
-    _, _ -> {
+  case status_result {
+    Error(Nil) -> {
+      logging.log(
+        logging.Error,
+        "[Overview] Timeout en attendant l'embed statut/ressources",
+      )
       let _ =
         interaction.edit_response(
           pkt,
@@ -158,6 +153,42 @@ pub fn handle_overview(
             "❌ Une erreur est survenue lors de l'exécution de la commande.",
           ),
         )
+      Nil
+    }
+
+    Ok(Error(err)) -> {
+      logging.log(
+        logging.Error,
+        "[Overview] Erreur statut/ressources : " <> string.inspect(err),
+      )
+      let _ =
+        interaction.edit_response(
+          pkt,
+          message: message.new(
+            "❌ Une erreur est survenue lors de l'exécution de la commande.",
+          ),
+        )
+      Nil
+    }
+
+    Ok(Ok(status_embed)) -> {
+      let reply =
+        message.new("")
+        |> message.add_embed(status_embed)
+        |> message.add_embed(vpn_embed)
+
+      let reply = case miniprint_embed_result {
+        Ok(miniprint_embed) -> message.add_embed(reply, miniprint_embed)
+        Error(Nil) -> {
+          logging.log(
+            logging.Error,
+            "[Overview] Timeout en attendant l'embed MiniPrint, envoi sans",
+          )
+          reply
+        }
+      }
+
+      let _ = interaction.edit_response(pkt, message: reply)
       Nil
     }
   }
