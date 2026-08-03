@@ -26,6 +26,7 @@ services:
       context: ./backup
       dockerfile: Dockerfile
     container_name: backup
+    init: true
     environment:
       - TZ=Europe/Paris
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
