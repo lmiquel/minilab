@@ -125,6 +125,7 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN_V2}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID_V2}
       - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
+      - WG_PEERS=${WG_PEERS}
       - TZ=Europe/Paris
       - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
