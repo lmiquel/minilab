@@ -55,7 +55,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
       RollerDerbyScoreboard,
       ServiceDefinition(
         "rollerderbyscoreboard",
-        "Roller Derby Scoreboard (Carolina)",
+        "RD Scoreboard",
         "🛼",
         Apps,
         True,
