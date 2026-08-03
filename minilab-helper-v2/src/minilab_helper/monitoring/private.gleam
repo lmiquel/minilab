@@ -3,7 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
-import minilab_helper/common.{
+import minilab_helper/commons.{
   type ContainerStatus, type HealthStatus, Healthy, NoHealthcheck, Unhealthy,
 }
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
@@ -14,8 +14,6 @@ const restart_alert_threshold = 3
 
 // ── Diff pur (port fidèle de check-status.ts) ───────────────────────────
 
-/// Diff pur entre l'état précédent et le nouveau statut d'un service :
-/// renvoie le nouvel état à mémoriser et les messages à envoyer en DM.
 pub fn check_status(
   status: ContainerStatus,
   previous: Result(ServiceState, Nil),
@@ -111,9 +109,6 @@ fn diff_state(
   }
 }
 
-/// Seulement pertinent quand le service est censé tourner : un conteneur
-/// arrêté volontairement garde souvent son dernier statut de healthcheck à
-/// "unhealthy", ce qui n'a rien d'anormal et ne doit pas alerter.
 fn diff_health(
   status: ContainerStatus,
   prev: ServiceState,
@@ -134,7 +129,7 @@ fn diff_health(
       case status.health {
         Unhealthy ->
           Some(
-            common.health_emoji(status.health)
+            commons.health_emoji(status.health)
             <> " **"
             <> label
             <> "** est `unhealthy` !\n"
@@ -147,7 +142,7 @@ fn diff_health(
           case prev.last_health == Unhealthy {
             True ->
               Some(
-                common.health_emoji(status.health)
+                commons.health_emoji(status.health)
                 <> " **"
                 <> label
                 <> "** est de nouveau `healthy`.",
@@ -195,8 +190,6 @@ fn diff_restart_count(
 
 // ── Cycle de polling (impur, port de poll-statuses.ts) ──────────────────
 
-/// Un cycle de polling : récupère les statuts, diffuse les alertes en DM,
-/// renvoie l'état à mémoriser pour le prochain cycle.
 pub fn poll_statuses(
   client: docker.Client,
   states: Dict(ServiceName, ServiceState),

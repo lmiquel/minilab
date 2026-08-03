@@ -9,7 +9,7 @@ import gleam/result
 import gleam/set
 import gleam/string
 import logging
-import minilab_helper/common.{type PeerInfo, PeerInfo}
+import minilab_helper/commons.{type PeerInfo, PeerInfo}
 import minilab_helper/dictionaries/docker_services.{Wireguard}
 import minilab_helper/docker/public as docker
 import minilab_helper/monitoring/public as monitoring
@@ -19,9 +19,6 @@ import minilab_helper/wireguard/types.{
 
 // ── Extraction des pubkeys (pur) ─────────────────────────────────────────
 
-/// Extrait les clés publiques WireGuard (base64, 44 caractères se terminant
-/// par `=`) d'une sortie `wg show wg0 peers`, une par ligne. Remplace la
-/// regex `^([A-Za-z0-9+/]{43}=)$` du v1.
 pub fn extract_pubkeys(output: String) -> List(String) {
   output
   |> string.split("\n")
@@ -103,10 +100,6 @@ fn is_base64_char(char: String) -> Bool {
 
 // ── Parsing des handshakes (pur) ─────────────────────────────────────────
 
-/// Parse la sortie de `wg show wg0 latest-handshakes` (une ligne
-/// `<pubkey><espaces><timestamp>` par peer) en paires (pubkey, timestamp
-/// unix). Les lignes sans timestamp valide ou à `0` (jamais handshaké) sont
-/// ignorées.
 pub fn parse_handshakes(output: String) -> List(#(String, Int)) {
   output
   |> string.split("\n")
@@ -138,9 +131,6 @@ fn parse_line(line: String) -> Result(#(String, Int), Nil) {
 /// 5 minutes sans handshake = déconnecté.
 const peer_timeout_seconds = 300
 
-/// Diff pur entre l'état WireGuard précédent et les handshakes lus à
-/// l'instant `now` (timestamp unix, secondes) : renvoie le nouvel état et
-/// les messages à envoyer en DM.
 pub fn diff_handshakes(
   state: WireGuardState,
   handshakes: List(#(String, Int)),
@@ -171,7 +161,7 @@ fn diff_one(
     Ok(name) -> name
     Error(Nil) -> "clé inconnue " <> string.slice(pubkey, 0, 10) <> "…"
   }
-  let date = common.format_date_fr(ts)
+  let date = commons.format_date_fr(ts)
   let was_connected = set.contains(state.connected_peers, pubkey)
   let is_connected = now - ts < peer_timeout_seconds
 
@@ -207,9 +197,6 @@ fn diff_one(
 
 // ── Cycles impurs (shells) ────────────────────────────────────────────────
 
-/// Un cycle de vérification des handshakes WireGuard : lit l'état des
-/// peers via `docker exec`, diffuse les alertes de connexion/déconnexion en
-/// DM. Port de check-wireguard-handshakes.ts.
 pub fn check_wireguard_handshakes(
   docker_client: docker.Client,
   state: booklet.Booklet(WireGuardState),
@@ -222,7 +209,7 @@ pub fn check_wireguard_handshakes(
 
     Ok(raw) -> {
       let handshakes = parse_handshakes(raw)
-      let now = common.now()
+      let now = commons.now()
       let current_state = booklet.get(state)
 
       let #(new_state, alerts) = diff_handshakes(current_state, handshakes, now)
@@ -233,9 +220,6 @@ pub fn check_wireguard_handshakes(
   }
 }
 
-/// Associe les pubkeys WireGuard (dans l'ordre renvoyé par
-/// `wg show wg0 peers`) aux noms fournis via `WG_PEERS`, par position — même
-/// hypothèse que le v1 : l'ordre doit correspondre. Port de load-peer-names.ts.
 pub fn load_peer_names(
   docker_client: docker.Client,
   state: booklet.Booklet(WireGuardState),

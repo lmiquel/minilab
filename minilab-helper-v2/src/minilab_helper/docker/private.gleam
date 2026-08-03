@@ -14,7 +14,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri
-import minilab_helper/common.{
+import minilab_helper/commons.{
   type ContainerStatus, type HealthStatus, type HostResources,
   type HostStorageUsage, type ResourceUsage, ContainerStatus, Healthy,
   HostResources, HostStorageInfo, HostStorageUsage, NoHealthcheck, ResourceUsage,
@@ -163,8 +163,6 @@ fn status_decoder(name: ServiceName) -> decode.Decoder(ContainerStatus) {
   ))
 }
 
-/// `State.Health` est absent quand aucun healthcheck n'est configuré —
-/// équivalent de `info.State.Health?.Status ?? "none"` côté v1.
 fn health_decoder() -> decode.Decoder(HealthStatus) {
   use health <- decode.optional_field("Health", NoHealthcheck, {
     use status <- decode.field("Status", decode.string)
@@ -183,8 +181,6 @@ fn health_from_string(status: String) -> HealthStatus {
   }
 }
 
-/// Renvoie le statut de tous les services surveillés. Comme le `Promise.all`
-/// du v1, échoue entièrement dès qu'un seul service ne répond pas.
 pub fn get_all_statuses(
   client: Client,
 ) -> Result(List(ContainerStatus), DockerError) {
@@ -257,10 +253,6 @@ fn stats_decoder() -> decode.Decoder(Stats) {
   decode.success(Stats(cpu, precpu, memory))
 }
 
-/// Port fidèle du calcul de get-resource-usage.ts, avec deux corrections :
-/// une garde explicite quand le delta système est nul (le v1 laisse le JS
-/// produire un NaN/Infinity silencieux), et `online_cpus` dérivé plutôt que
-/// figé à 4 (hypothèse "toujours un Pi 4 cœurs" du v1).
 fn compute_resource_usage(stats: Stats) -> ResourceUsage {
   let cpu_delta = int.to_float(stats.cpu.total_usage - stats.precpu.total_usage)
   let system_delta =
@@ -306,10 +298,6 @@ pub fn get_rpi_temperature() -> Result(Int, Nil) {
 }
 
 // ── Ressources hôte ──────────────────────────────────────────────────────
-// Contrairement au reste du module, ces fonctions ne parlent pas à
-// docker-socket-proxy : elles lisent l'hôte directement (mêmes montages que
-// get_rpi_temperature), regroupées ici par cohérence organisationnelle avec
-// le v1 plutôt que par dépendance à `Client`.
 
 const host_stat_path = "/host/stat"
 
@@ -319,8 +307,6 @@ const sd_mount_path = "/host/rootfs"
 
 const ssd_mount_path = "/host/ssd"
 
-/// Port de get-host-resources.ts : deux lectures de `/host/stat` espacées de
-/// 500ms pour calculer un delta CPU, plus une lecture de `/host/meminfo`.
 pub fn get_host_resources() -> Result(HostResources, Nil) {
   use stat1 <- result.try(read_cpu_stat())
   process.sleep(500)
@@ -403,11 +389,6 @@ fn meminfo_field(raw: String, key: String) -> Result(Int, Nil) {
   })
 }
 
-/// Port de get-storage-usage.ts. Pas d'équivalent direct de `fs.statfs()` en
-/// Gleam sans dépendance OTP supplémentaire (os_mon/disksup) — on shell-out
-/// via `df -Pk`, comme `os:cmd` est déjà utilisé pour `/shutdown`. `-P` force
-/// un format POSIX stable, portable entre le `df` busybox de l'image finale
-/// et GNU coreutils (vérifié sur les deux).
 pub fn get_storage_usage() -> Result(HostStorageUsage, Nil) {
   use sd <- result.try(df_info(sd_mount_path))
   use ssd <- result.try(df_info(ssd_mount_path))
@@ -478,10 +459,6 @@ pub fn restart_service(
 
 // ── Exec ─────────────────────────────────────────────────────────────────
 
-/// Exécute une commande dans le conteneur d'un service et renvoie son
-/// stdout. Le flux Docker exec est multiplexé (en-tête de 8 octets par
-/// frame) quand `Tty` est désactivé — on ne garde que les frames stdout
-/// (type 1), le stderr est ignoré comme en v1.
 pub fn exec_in_container(
   client: Client,
   name: ServiceName,

@@ -1,4 +1,4 @@
-import minilab_helper/common.{format_date_fr}
+import minilab_helper/commons.{format_date_fr}
 
 pub fn winter_uses_cet_utc_plus_1_test() {
   // 2026-01-15 12:00:00 UTC

@@ -1,4 +1,4 @@
-import minilab_helper/common.{
+import minilab_helper/commons.{
   type ContainerStatus, type HostResources, type HostStorageUsage,
   type ResourceUsage,
 }

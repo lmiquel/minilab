@@ -30,9 +30,6 @@ type PollingState {
   )
 }
 
-/// Démarre la boucle de polling des statuts Docker (60s, DM d'alerte sur
-/// changement d'état/santé ou crash-loop). Équivalent de
-/// monitoring-manager.ts's start()/poll().
 pub fn start(
   bot: bot.Bot,
   owner_id: Snowflake(snowflake.User),
@@ -72,8 +69,6 @@ fn handle_message(
   }
 }
 
-/// Envoie un message privé à l'owner, sans jamais lever d'erreur (comme le
-/// try/catch silencieux de dm() en v1).
 pub fn dm(
   bot: bot.Bot,
   owner_id: Snowflake(snowflake.User),

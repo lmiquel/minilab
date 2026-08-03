@@ -1,4 +1,4 @@
-import minilab_helper/common.{
+import minilab_helper/commons.{
   ContainerStatus, Healthy, NoHealthcheck, Starting, Unhealthy,
 }
 import minilab_helper/dictionaries/docker_services.{Cloudflared, Valheim}

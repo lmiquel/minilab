@@ -10,7 +10,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
-import minilab_helper/common.{type ContainerStatus}
+import minilab_helper/commons.{type ContainerStatus}
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
 import minilab_helper/dictionaries/service_categories
 import minilab_helper/miniprint/types as miniprint_types
@@ -41,9 +41,6 @@ pub fn reject_unauthorized(pkt: InteractionCreatePacketData) -> Nil {
 
 // ── Options de commande ──────────────────────────────────────────────────
 
-/// Extrait et résout l'option requise `service` d'une interaction de
-/// commande slash. Erreur possible seulement en cas d'usage direct de l'API
-/// Discord contournant les `choices` du client officiel.
 pub fn get_service_option(
   pkt: InteractionCreatePacketData,
 ) -> Result(ServiceName, Nil) {
@@ -71,9 +68,6 @@ pub fn temp_emoji(celsius: Int) -> String {
   }
 }
 
-/// Même seuils que `temp_emoji`, pour une température en virgule flottante
-/// (celle renvoyée par Moonraker) — les deux existent séparément puisque
-/// Gleam n'a pas de nombre unique int/float comme TypeScript.
 pub fn temp_emoji_float(celsius: Float) -> String {
   case celsius >=. 70.0 {
     True -> "🔴"
@@ -97,7 +91,6 @@ pub fn klippy_state_emoji(
   }
 }
 
-/// Port de format-uptime.ts.
 pub fn format_uptime(total_seconds: Int) -> String {
   let days = total_seconds / 86_400
   let hours = total_seconds % 86_400 / 3600
@@ -113,17 +106,15 @@ pub fn format_uptime(total_seconds: Int) -> String {
   }
 }
 
-/// Si healthcheck dispo → on affiche uniquement son résultat (running
-/// implicite). Sinon → on affiche l'état Docker.
 pub fn render_container_state_line(status: ContainerStatus) -> String {
   let is_running = status.state == "running"
-  let has_health = status.health != common.NoHealthcheck
+  let has_health = status.health != commons.NoHealthcheck
 
   case has_health && is_running {
     True ->
-      common.health_emoji(status.health)
+      commons.health_emoji(status.health)
       <> " `"
-      <> common.health_status_to_string(status.health)
+      <> commons.health_status_to_string(status.health)
       <> "`"
 
     False -> {
@@ -136,9 +127,6 @@ pub fn render_container_state_line(status: ContainerStatus) -> String {
   }
 }
 
-/// Ajoute un champ d'en-tête par catégorie (ordre Game/Apps/Utils/Network)
-/// suivi d'un champ par service dans cette catégorie. `build_value` renvoie
-/// `None` pour omettre un service (ex : statut indisponible).
 pub fn add_grouped_service_fields(
   embed: Embed,
   services: List(ServiceName),

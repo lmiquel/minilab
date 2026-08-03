@@ -24,8 +24,6 @@ const receive_timeout_ms = 4500
 
 // ── Requêtes bas niveau ──────────────────────────────────────────────────
 
-/// Port de fetch-json.ts : ne lève jamais, une erreur réseau/timeout/statut
-/// non-2xx devient simplement `Error(Nil)`.
 fn fetch_json(url: String) -> Result(String, Nil) {
   use req <- result.try(request.to(url) |> result.replace_error(Nil))
 
@@ -40,8 +38,6 @@ fn fetch_json(url: String) -> Result(String, Nil) {
   }
 }
 
-/// Port de check-reachable.ts : n'importe quel statut HTTP compte comme
-/// joignable, seule une erreur réseau/timeout est un échec.
 fn check_reachable(url: String) -> Bool {
   case request.to(url) {
     Error(Nil) -> False
@@ -68,8 +64,6 @@ fn receive_bool(subject: process.Subject(Bool)) -> Bool {
   process.receive(subject, within: receive_timeout_ms) |> result.unwrap(False)
 }
 
-/// Décode le corps si présent, `None` si le fetch a échoué ou si le JSON ne
-/// correspond pas à la forme attendue — jamais d'exception, comme le v1.
 fn decode_body(
   body: Result(String, Nil),
   decoder: decode.Decoder(a),
@@ -91,11 +85,6 @@ fn server_info_decoder() -> decode.Decoder(String) {
   decode.success(state)
 }
 
-/// KlippyState n'a que 4 valeurs connues côté Klipper (ready/startup/
-/// shutdown/error) ; une valeur inattendue devient `None`, regroupée avec le
-/// cas "injoignable" côté embed plutôt que de porter la chaîne brute (le v1
-/// l'affiche telle quelle, mais Klipper ne renvoie en pratique jamais rien
-/// d'autre que ces 4 valeurs).
 fn klippy_state_from_string(state: String) -> Option(types.KlippyState) {
   case state {
     "ready" -> Some(types.Ready)
@@ -172,11 +161,6 @@ fn kb_to_mb(kb: Int) -> Int {
 
 // ── Overview ─────────────────────────────────────────────────────────────
 
-/// Port de get-miniprint-overview.ts. Les 6 requêtes (4 Moonraker + Mainsail
-/// + Crowsnest) partent en parallèle (spawn + subject, comme le
-/// `process.spawn_unlinked` déjà utilisé dans minilab_helper.gleam) pour
-/// rester fidèle au `Promise.all` du v1 : ~4-5s de pire cas même si MiniPrint
-/// est complètement injoignable, plutôt que jusqu'à ~24s en séquentiel.
 pub fn get_overview() -> types.MiniPrintOverview {
   let moonraker =
     "http://" <> miniprint_host <> ":" <> int.to_string(moonraker_port)

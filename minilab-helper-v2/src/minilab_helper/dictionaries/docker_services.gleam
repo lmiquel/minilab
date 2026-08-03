@@ -117,9 +117,6 @@ pub fn get_service(name: ServiceName) -> ServiceDefinition {
   definition
 }
 
-/// Identifiants canoniques v1 (clés du dictionnaire `SERVICES`), pas les
-/// noms de conteneur — diffèrent pour pingvinshare, minilabhelper,
-/// dockersocketproxy et githubrunner.
 pub fn service_name_to_string(name: ServiceName) -> String {
   case name {
     Valheim -> "valheim"
@@ -193,8 +190,6 @@ pub fn group_by_category(
   |> list.filter(fn(pair) { pair.1 != [] })
 }
 
-/// `#(name, value)` pour alimenter les `choices` d'une option de commande
-/// slash — `value` est l'identifiant canonique (voir `service_name_to_string`).
 pub fn to_discord_choices(
   services: List(ServiceName),
 ) -> List(#(String, String)) {

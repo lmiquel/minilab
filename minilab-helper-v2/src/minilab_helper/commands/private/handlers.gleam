@@ -103,9 +103,6 @@ pub fn handle_miniprint(
 
 // ── /overview ────────────────────────────────────────────────────────────
 
-/// Port de handle-overview.ts : le statut+ressources et l'aperçu MiniPrint
-/// (déjà coûteux en interne, ~4-5s pire cas) partent en parallèle comme le
-/// `Promise.all` du v1, le VPN étant local/instantané reste synchrone.
 pub fn handle_overview(
   client: docker.Client,
   wireguard_state: booklet.Booklet(WireGuardState),

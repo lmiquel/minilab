@@ -17,8 +17,6 @@ import minilab_helper/docker/public as docker
 import minilab_helper/monitoring/public as monitoring
 import minilab_helper/wireguard/public as wireguard
 
-/// Équivalent de index.ts : vérifie les variables d'environnement requises,
-/// construit le bot et le client Docker, câble le superviseur, puis boot.
 pub fn main() -> Nil {
   logging.configure()
 
@@ -34,13 +32,6 @@ pub fn main() -> Nil {
   let bot = bot.new(token, client_id)
   let docker = docker.new_client()
   let wireguard_state = wireguard.new_state()
-  // La gateway Discord envoie un nouveau paquet READY chaque fois qu'elle
-  // doit se ré-identifier (pas juste reprendre une session existante) —
-  // ça arrive normalement de temps en temps sur une connexion longue durée
-  // (coupure réseau, session expirée). En v1, `client.once("ready", ...)`
-  // ne se déclenche qu'une fois pour toute la durée du process ; ce flag
-  // reproduit cette sémantique pour éviter de renvoyer le DM de démarrage
-  // (et de recharger commandes/peers) à chaque reconnexion.
   let has_booted = booklet.new(False)
 
   let handle_packet = fn(bot: bot.Bot, packet: Packet) {
@@ -51,11 +42,6 @@ pub fn main() -> Nil {
           False -> {
             booklet.set(has_booted, True)
 
-            // Ce travail (7 appels REST pour les commandes + docker exec
-            // pour les peers WireGuard) ne doit jamais bloquer le processus
-            // qui lit les frames de la gateway websocket — un blocage trop
-            // long ici a probablement causé la boucle de reconnexion
-            // observée en production (déconnexion → re-boot → re-blocage).
             process.spawn_unlinked(fn() {
               commands.register_commands(bot)
 
@@ -77,9 +63,6 @@ pub fn main() -> Nil {
         }
 
       InteractionCreatePacket(pkt) -> {
-        // Même raison que pour le boot : un handler de commande fait des
-        // appels réseau (Docker, WireGuard) et ne doit pas bloquer la
-        // lecture des frames de la gateway pendant qu'il tourne.
         process.spawn_unlinked(fn() {
           commands.handle_interaction(
             docker,

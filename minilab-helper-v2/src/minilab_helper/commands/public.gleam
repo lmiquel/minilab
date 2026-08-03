@@ -13,8 +13,6 @@ import minilab_helper/dictionaries/commands.{build_slash_commands}
 import minilab_helper/docker/public as docker
 import minilab_helper/wireguard/types.{type WireGuardState}
 
-/// Enregistre les slash commands globalement. Équivalent de
-/// commands-manager.ts's registerCommands.
 pub fn register_commands(bot: bot.Bot) -> Nil {
   case
     discord_gleam.bulk_overwrite_global_commands(bot, build_slash_commands())
@@ -32,8 +30,6 @@ pub fn register_commands(bot: bot.Bot) -> Nil {
   }
 }
 
-/// Gère une interaction entrante : gate owner, puis dispatch par nom de
-/// commande. Équivalent du listener installé par setupCommandHandler.
 pub fn handle_interaction(
   client: docker.Client,
   bot: bot.Bot,
@@ -52,8 +48,6 @@ pub fn handle_interaction(
   }
 }
 
-/// Table de dispatch par nom de commande. MiniPrint s'ajoutera ici au fil
-/// du prochain incrément.
 fn dispatch(
   client: docker.Client,
   bot: bot.Bot,

@@ -3,7 +3,7 @@ import discord_gleam/bot
 import discord_gleam/discord/snowflake.{type Snowflake}
 import gleam/erlang/process.{type Subject}
 import gleam/otp/actor
-import minilab_helper/common.{type PeerInfo}
+import minilab_helper/commons.{type PeerInfo}
 import minilab_helper/docker/public as docker
 import minilab_helper/wireguard/private
 import minilab_helper/wireguard/types.{type ConnectedPeer, type WireGuardState}
@@ -24,14 +24,10 @@ type PollingState {
   )
 }
 
-/// Crée la cellule d'état WireGuard partagée entre la boucle de polling et
-/// les lectures (`/vpn`). Équivalent du `this.state` privé de la classe v1.
 pub fn new_state() -> booklet.Booklet(WireGuardState) {
   booklet.new(types.new())
 }
 
-/// Associe les pubkeys WireGuard aux noms de `WG_PEERS`. Équivalent de
-/// wireguard-manager.ts's loadPeerNames.
 pub fn load_peer_names(
   docker: docker.Client,
   state: booklet.Booklet(WireGuardState),
@@ -40,8 +36,6 @@ pub fn load_peer_names(
   private.load_peer_names(docker, state, peers)
 }
 
-/// Démarre la boucle de polling des handshakes WireGuard (15s). Équivalent
-/// de wireguard-manager.ts's start().
 pub fn start(
   docker: docker.Client,
   state: booklet.Booklet(WireGuardState),

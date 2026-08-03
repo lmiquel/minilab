@@ -1,4 +1,4 @@
-import minilab_helper/common.{type HealthStatus}
+import minilab_helper/commons.{type HealthStatus}
 
 pub type ServiceState {
   ServiceState(

@@ -6,7 +6,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import minilab_helper/commands/private
-import minilab_helper/common.{
+import minilab_helper/commons.{
   type ContainerStatus, type PeerInfo, format_date_fr,
 }
 import minilab_helper/dictionaries/docker_services.{monitored_services}
@@ -25,8 +25,6 @@ const color_grey = 0x95A5A6
 
 // ── /status ──────────────────────────────────────────────────────────────
 
-/// Port de build-status-embed.ts. Comme le v1, échoue entièrement si
-/// get_all_statuses échoue (`Promise.all` fail-fast côté v1).
 pub fn build_status_embed(
   client: docker.Client,
 ) -> Result(embed.Embed, DockerError) {
@@ -61,9 +59,6 @@ fn status_field_value(statuses: List(ContainerStatus), service) {
 
 // ── /resources ───────────────────────────────────────────────────────────
 
-/// Port de build-resources-embed.ts. À la différence de /status, une panne
-/// sur un service n'est jamais fatale : elle affiche juste
-/// "❌ Stats indisponibles" pour ce service.
 pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
   let description = case docker.get_rpi_temperature() {
     Ok(temp) ->
@@ -100,7 +95,6 @@ pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
 
 // ── /vpn ─────────────────────────────────────────────────────────────────
 
-/// Port de build-vpn-embed.ts.
 pub fn build_vpn_embed(peers: List(ConnectedPeer)) -> embed.Embed {
   case peers {
     [] ->
@@ -134,7 +128,6 @@ pub fn build_vpn_embed(peers: List(ConnectedPeer)) -> embed.Embed {
 
 const miniprint_title = "🖨️ MiniPrint — Statut & Ressources"
 
-/// Port de build-miniprint-embed.ts.
 pub fn build_miniprint_embed(
   overview: MiniPrintOverview,
   peer: Option(PeerInfo),
@@ -304,9 +297,6 @@ fn miniprint_peer_line(peer: Option(PeerInfo)) -> String {
 
 // ── /overview ────────────────────────────────────────────────────────────
 
-/// Port de build-overview-status-resources-embed.ts. Comme /status, échoue
-/// entièrement si get_all_statuses échoue ; les ressources hôte/température/
-/// stockage dégradent individuellement en "❌ indisponible".
 pub fn build_overview_status_resources_embed(
   client: docker.Client,
 ) -> Result(embed.Embed, DockerError) {
@@ -402,9 +392,6 @@ fn overview_field_value(
   }
 }
 
-/// Port de build-overview-vpn-embed.ts. Contrairement à build_vpn_embed (qui
-/// ne liste que les peers connectés, via get_connected_peers), celui-ci
-/// prend tous les peers configurés (get_all_peers) et affiche un compteur.
 pub fn build_overview_vpn_embed(peers: List(PeerInfo)) -> embed.Embed {
   case peers {
     [] ->
