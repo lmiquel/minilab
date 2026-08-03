@@ -22,7 +22,7 @@ gleam_json = ">= 3.1.0 and < 4.0.0"
 envoy = ">= 1.2.0 and < 2.0.0"
 logging = ">= 1.5.0 and < 2.0.0"
 simplifile = ">= 2.6.0 and < 3.0.0"
-discord_gleam = { git = "https://github.com/lmiquel/discord_gleam", ref = "add-slash-command-choices" }
+discord_gleam = { git = "https://github.com/lmiquel/discord_gleam", ref = "bulk-overwrite-global-commands" }
 booklet = ">= 1.1.0 and < 2.0.0"
 
 [dev_dependencies]

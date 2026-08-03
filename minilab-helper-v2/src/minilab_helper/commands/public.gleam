@@ -16,19 +16,18 @@ import minilab_helper/wireguard/types.{type WireGuardState}
 /// Enregistre les slash commands globalement. Équivalent de
 /// commands-manager.ts's registerCommands.
 pub fn register_commands(bot: bot.Bot) -> Nil {
-  case discord_gleam.register_global_commands(bot, build_slash_commands()) {
+  case
+    discord_gleam.bulk_overwrite_global_commands(bot, build_slash_commands())
+  {
     Ok(_) ->
       logging.log(
         logging.Info,
         "[Commands] Commandes slash enregistrées globalement.",
       )
-    Error(#(command, err)) ->
+    Error(err) ->
       logging.log(
         logging.Error,
-        "[Commands] Erreur enregistrement "
-          <> command.name
-          <> ": "
-          <> string.inspect(err),
+        "[Commands] Erreur enregistrement commandes: " <> string.inspect(err),
       )
   }
 }
