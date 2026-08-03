@@ -12,6 +12,7 @@ import gleam/otp/static_supervisor.{OneForOne}
 import gleam/otp/supervision
 import gleam/string
 import logging
+import minilab_helper/backup_report/public as backup_report
 import minilab_helper/commands/public as commands
 import minilab_helper/docker/public as docker
 import minilab_helper/monitoring/public as monitoring
@@ -93,6 +94,9 @@ pub fn main() -> Nil {
       supervision.worker(fn() {
         wireguard.start(docker, wireguard_state, bot, owner_id)
       }),
+    )
+    |> static_supervisor.add(
+      supervision.worker(fn() { backup_report.start(bot, owner_id) }),
     )
     |> static_supervisor.start()
 

@@ -7,7 +7,6 @@
 set -e
 
 MINILAB_USER="minilab"
-PROJECT_DIR="/home/$MINILAB_USER/minilab"
 
 echo "╔══════════════════════════════════════════════════╗"
 echo "║         Setup minilab — démarrage                ║"
@@ -71,8 +70,9 @@ ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
 
-# SSH
-ufw allow ssh
+# SSH (LAN + VPN uniquement — jamais exposé sur Internet)
+ufw allow from 192.168.0.0/16 to any port 22 proto tcp
+ufw allow from 10.0.0.0/8    to any port 22 proto tcp
 
 # WireGuard VPN (seul port exposé sur Internet avec SSH)
 ufw allow 51820/udp
@@ -87,8 +87,10 @@ ufw allow from 192.168.0.0/16 to any port 53
 ufw allow from 10.0.0.0/8    to any port 53
 ufw allow from 172.16.0.0/12 to any port 53
 
-# Les ports de jeu (RO 6900/6121/5121, Valheim 2456-2458) ne sont PAS
-# exposés sur Internet — les joueurs passent obligatoirement par WireGuard
+# Aucun service de jeu (Valheim, Cobblemon, Terraria, RollerDerby) ne publie
+# de port hôte : ils tournent tous en network_mode: service:wireguard, donc
+# rien à ouvrir dans UFW pour eux — les joueurs passent obligatoirement par
+# le tunnel WireGuard.
 ufw --force enable
 echo "UFW configuré."
 

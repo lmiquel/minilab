@@ -1,6 +1,6 @@
 import gleam/list
 import minilab_helper/dictionaries/service_categories.{
-  type ServiceCategory, Apps, Game, Network, Utils,
+  type ServiceCategory, Apps, DevTools, Game, Network, Utils,
 }
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -20,6 +20,7 @@ pub type ServiceName {
   Pihole
   Cloudflared
   Duckdns
+  Backup
 }
 
 pub type ServiceDefinition {
@@ -61,7 +62,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
         True,
       ),
     ),
-    #(Gitea, ServiceDefinition("gitea", "Gitea", "🍵", Apps, True, True)),
+    #(Gitea, ServiceDefinition("gitea", "Gitea", "🍵", DevTools, True, True)),
     #(
       MinilabHelper,
       ServiceDefinition(
@@ -90,12 +91,15 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
         "github-runner",
         "GitHub Runner",
         "🐙",
-        Utils,
+        DevTools,
         False,
         True,
       ),
     ),
-    #(Mariadb, ServiceDefinition("mariadb", "MariaDB", "🦭", Utils, True, True)),
+    #(
+      Mariadb,
+      ServiceDefinition("mariadb", "MariaDB", "🦭", DevTools, True, True),
+    ),
     #(
       Wireguard,
       ServiceDefinition("wireguard", "WireGuard", "🔒", Network, False, True),
@@ -109,6 +113,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
       Duckdns,
       ServiceDefinition("duckdns", "DuckDNS", "🦆", Network, False, True),
     ),
+    #(Backup, ServiceDefinition("backup", "Backup", "💾", Utils, False, True)),
   ]
 }
 
@@ -133,6 +138,7 @@ pub fn service_name_to_string(name: ServiceName) -> String {
     Pihole -> "pihole"
     Cloudflared -> "cloudflared"
     Duckdns -> "duckdns"
+    Backup -> "backup"
   }
 }
 
@@ -152,6 +158,7 @@ pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
     "pihole" -> Ok(Pihole)
     "cloudflared" -> Ok(Cloudflared)
     "duckdns" -> Ok(Duckdns)
+    "backup" -> Ok(Backup)
     _ -> Error(Nil)
   }
 }

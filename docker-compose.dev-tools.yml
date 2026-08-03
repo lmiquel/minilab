@@ -1,0 +1,89 @@
+services:
+  github-runner:
+    image: myoung34/github-runner:ubuntu-noble
+    container_name: github-runner
+    environment:
+      - TZ=Europe/Paris
+      - REPO_URL=${GITHUB_RUNNER_REPO_URL}
+      - ACCESS_TOKEN=${GITHUB_RUNNER_ACCESS_TOKEN}
+      - RUNNER_NAME=minilab-runner
+      - RUNNER_SCOPE=repo
+      - RUNNER_WORKDIR=/tmp/github-runner
+      - LABELS=self-hosted,arm64,minilab
+      - EPHEMERAL=false
+      - DISABLE_AUTO_UPDATE=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/ssd/github-runner/work:/tmp/github-runner
+    restart: unless-stopped
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.32
+    labels:
+      - "minilab.service=github-runner"
+
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=${GITEA_DB_PASSWORD}
+    volumes:
+      - /mnt/ssd/mariadb/config:/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3306"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.40
+    labels:
+      - "minilab.service=mariadb"
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - TZ=Europe/Paris
+      - GITEA__database__DB_TYPE=mysql
+      - GITEA__database__HOST=mariadb:3306
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=${GITEA_DB_PASSWORD}
+      - GITEA__server__DOMAIN=${GITEA_HOSTNAME}
+      - GITEA__server__SSH_DOMAIN=${GITEA_HOSTNAME}
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__server__HTTP_PORT=3001
+      - GITEA__server__ROOT_URL=http://${GITEA_HOSTNAME}:3001/
+      - GITEA__server__LFS_START_SERVER=true
+      - GITEA__service__DISABLE_REGISTRATION=true
+      - GITEA__security__INSTALL_LOCK=true
+    volumes:
+      - /mnt/ssd/gitea/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    network_mode: "service:wireguard"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      wireguard:
+        condition: service_healthy
+    labels:
+      - "minilab.service=gitea"

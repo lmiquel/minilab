@@ -51,7 +51,15 @@ mkdir -p \
   "$MOUNT_POINT/pihole/etc" \
   "$MOUNT_POINT/pihole/dnsmasq" \
   "$MOUNT_POINT/duckdns/config" \
-  "$MOUNT_POINT/wireguard/config"
+  "$MOUNT_POINT/wireguard/config" \
+  "$MOUNT_POINT/cobblemon" \
+  "$MOUNT_POINT/terraria/worlds" \
+  "$MOUNT_POINT/mariadb/config" \
+  "$MOUNT_POINT/gitea/data" \
+  "$MOUNT_POINT/pingvin/data" \
+  "$MOUNT_POINT/pingvin/images" \
+  "$MOUNT_POINT/github-runner/work" \
+  "$MOUNT_POINT/backups"
 
 # Droits pour Docker (uid 1000 = utilisateur standard)
 chown -R 1000:1000 "$MOUNT_POINT"

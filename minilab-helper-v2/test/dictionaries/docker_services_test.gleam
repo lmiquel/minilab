@@ -4,7 +4,7 @@ import minilab_helper/dictionaries/docker_services.{
   Terraria, Valheim, Wireguard, all_services, controllable_services,
   group_by_category, service_name_from_string, service_name_to_string,
 }
-import minilab_helper/dictionaries/service_categories.{Game, Network, Utils}
+import minilab_helper/dictionaries/service_categories.{DevTools, Game, Network}
 
 pub fn service_name_round_trips_for_every_service_test() {
   list.each(all_services(), fn(name) {
@@ -59,5 +59,5 @@ pub fn mixed_categories_are_all_grouped_test() {
   let grouped = group_by_category([Mariadb, Wireguard, Valheim])
 
   assert grouped
-    == [#(Game, [Valheim]), #(Utils, [Mariadb]), #(Network, [Wireguard])]
+    == [#(Game, [Valheim]), #(DevTools, [Mariadb]), #(Network, [Wireguard])]
 }
