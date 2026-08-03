@@ -23,6 +23,7 @@ envoy = ">= 1.2.0 and < 2.0.0"
 logging = ">= 1.5.0 and < 2.0.0"
 simplifile = ">= 2.6.0 and < 3.0.0"
 discord_gleam = { git = "https://github.com/lmiquel/discord_gleam", ref = "add-slash-command-choices" }
+booklet = ">= 1.1.0 and < 2.0.0"
 
 [dev_dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
