@@ -1,4 +1,7 @@
-import minilab_helper/common.{type ContainerStatus, type ResourceUsage}
+import minilab_helper/common.{
+  type ContainerStatus, type HostResources, type HostStorageUsage,
+  type ResourceUsage,
+}
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
 import minilab_helper/docker/private
 import minilab_helper/docker/types.{type DockerError}
@@ -25,6 +28,14 @@ pub fn get_resource_usage(
 
 pub fn get_rpi_temperature() -> Result(Int, Nil) {
   private.get_rpi_temperature()
+}
+
+pub fn get_host_resources() -> Result(HostResources, Nil) {
+  private.get_host_resources()
+}
+
+pub fn get_storage_usage() -> Result(HostStorageUsage, Nil) {
+  private.get_storage_usage()
 }
 
 pub fn start_service(

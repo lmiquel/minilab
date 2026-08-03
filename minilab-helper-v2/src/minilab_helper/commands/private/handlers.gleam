@@ -9,11 +9,13 @@ import discord_gleam/ws/packets/interaction_create.{
 import gleam/erlang/charlist
 import gleam/erlang/process
 import gleam/list
+import gleam/option
 import minilab_helper/commands/private
 import minilab_helper/commands/private/embed_views
 import minilab_helper/dictionaries/docker_services.{all_services, get_service}
 import minilab_helper/dictionaries/service_categories.{Network}
 import minilab_helper/docker/public as docker
+import minilab_helper/miniprint/public as miniprint
 import minilab_helper/monitoring/public as monitoring
 import minilab_helper/wireguard/public as wireguard
 import minilab_helper/wireguard/types.{type WireGuardState}
@@ -71,6 +73,97 @@ pub fn handle_vpn(
       message: message.new("") |> message.add_embed(embed),
     )
   Nil
+}
+
+// ── /miniprint ───────────────────────────────────────────────────────────
+
+const miniprint_peer_name = "MiniPrint"
+
+pub fn handle_miniprint(
+  wireguard_state: booklet.Booklet(WireGuardState),
+  pkt: InteractionCreatePacketData,
+) -> Nil {
+  let _ = interaction.defer_response(pkt, ephemeral: True)
+
+  let overview = miniprint.get_overview()
+  let peer =
+    wireguard.get_all_peers(wireguard_state)
+    |> list.find(fn(p) { p.name == miniprint_peer_name })
+    |> option.from_result
+
+  let embed = embed_views.build_miniprint_embed(overview, peer)
+
+  let _ =
+    interaction.edit_response(
+      pkt,
+      message: message.new("") |> message.add_embed(embed),
+    )
+  Nil
+}
+
+// ── /overview ────────────────────────────────────────────────────────────
+
+/// Port de handle-overview.ts : le statut+ressources et l'aperçu MiniPrint
+/// (déjà coûteux en interne, ~4-5s pire cas) partent en parallèle comme le
+/// `Promise.all` du v1, le VPN étant local/instantané reste synchrone.
+pub fn handle_overview(
+  client: docker.Client,
+  wireguard_state: booklet.Booklet(WireGuardState),
+  pkt: InteractionCreatePacketData,
+) -> Nil {
+  let _ = interaction.defer_response(pkt, ephemeral: True)
+
+  let status_subj = process.new_subject()
+  process.spawn_unlinked(fn() {
+    process.send(
+      status_subj,
+      embed_views.build_overview_status_resources_embed(client),
+    )
+  })
+
+  let miniprint_subj = process.new_subject()
+  process.spawn_unlinked(fn() {
+    let overview = miniprint.get_overview()
+    let peer =
+      wireguard.get_all_peers(wireguard_state)
+      |> list.find(fn(p) { p.name == miniprint_peer_name })
+      |> option.from_result
+    process.send(
+      miniprint_subj,
+      embed_views.build_miniprint_embed(overview, peer),
+    )
+  })
+
+  let vpn_embed =
+    wireguard.get_all_peers(wireguard_state)
+    |> embed_views.build_overview_vpn_embed()
+
+  let status_result = process.receive(status_subj, within: 6000)
+  let miniprint_embed_result = process.receive(miniprint_subj, within: 6000)
+
+  case status_result, miniprint_embed_result {
+    Ok(Ok(status_embed)), Ok(miniprint_embed) -> {
+      let _ =
+        interaction.edit_response(
+          pkt,
+          message: message.new("")
+            |> message.add_embed(status_embed)
+            |> message.add_embed(vpn_embed)
+            |> message.add_embed(miniprint_embed),
+        )
+      Nil
+    }
+    _, _ -> {
+      let _ =
+        interaction.edit_response(
+          pkt,
+          message: message.new(
+            "❌ Une erreur est survenue lors de l'exécution de la commande.",
+          ),
+        )
+      Nil
+    }
+  }
 }
 
 // ── /start /stop /restart ────────────────────────────────────────────────

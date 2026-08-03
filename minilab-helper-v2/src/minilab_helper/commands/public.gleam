@@ -70,6 +70,8 @@ fn dispatch(
     "restart" -> handlers.handle_restart(client, bot, owner_id, pkt)
     "shutdown" -> handlers.handle_shutdown(client, bot, owner_id, pkt)
     "vpn" -> handlers.handle_vpn(wireguard_state, pkt)
+    "miniprint" -> handlers.handle_miniprint(wireguard_state, pkt)
+    "overview" -> handlers.handle_overview(client, wireguard_state, pkt)
     _ -> Nil
   }
 }

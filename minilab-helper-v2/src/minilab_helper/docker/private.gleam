@@ -1,6 +1,8 @@
 import envoy
 import gleam/bit_array
 import gleam/dynamic/decode
+import gleam/erlang/charlist
+import gleam/erlang/process
 import gleam/float
 import gleam/http
 import gleam/http/request
@@ -13,8 +15,10 @@ import gleam/result
 import gleam/string
 import gleam/uri
 import minilab_helper/common.{
-  type ContainerStatus, type HealthStatus, type ResourceUsage, ContainerStatus,
-  Healthy, NoHealthcheck, ResourceUsage, Starting, Unhealthy,
+  type ContainerStatus, type HealthStatus, type HostResources,
+  type HostStorageUsage, type ResourceUsage, ContainerStatus, Healthy,
+  HostResources, HostStorageInfo, HostStorageUsage, NoHealthcheck, ResourceUsage,
+  Starting, Unhealthy,
 }
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
 import minilab_helper/docker/types.{
@@ -300,6 +304,148 @@ pub fn get_rpi_temperature() -> Result(Int, Nil) {
 
   Ok(float.round(int.to_float(millidegrees) /. 1000.0))
 }
+
+// ── Ressources hôte ──────────────────────────────────────────────────────
+// Contrairement au reste du module, ces fonctions ne parlent pas à
+// docker-socket-proxy : elles lisent l'hôte directement (mêmes montages que
+// get_rpi_temperature), regroupées ici par cohérence organisationnelle avec
+// le v1 plutôt que par dépendance à `Client`.
+
+const host_stat_path = "/host/stat"
+
+const host_meminfo_path = "/host/meminfo"
+
+const sd_mount_path = "/host/rootfs"
+
+const ssd_mount_path = "/host/ssd"
+
+/// Port de get-host-resources.ts : deux lectures de `/host/stat` espacées de
+/// 500ms pour calculer un delta CPU, plus une lecture de `/host/meminfo`.
+pub fn get_host_resources() -> Result(HostResources, Nil) {
+  use stat1 <- result.try(read_cpu_stat())
+  process.sleep(500)
+  use stat2 <- result.try(read_cpu_stat())
+  let cpu_percent = calc_cpu_percent(stat1, stat2)
+
+  use #(total_kb, avail_kb) <- result.try(read_meminfo())
+  let mem_total_mb = float.round(int.to_float(total_kb) /. 1024.0)
+  let mem_avail_mb = float.round(int.to_float(avail_kb) /. 1024.0)
+  let mem_used_mb = mem_total_mb - mem_avail_mb
+  let mem_percent =
+    float.to_precision(
+      int.to_float(mem_used_mb) /. int.to_float(mem_total_mb) *. 100.0,
+      1,
+    )
+
+  Ok(HostResources(
+    cpu_percent: cpu_percent,
+    mem_used_mb: mem_used_mb,
+    mem_total_mb: mem_total_mb,
+    mem_percent: mem_percent,
+  ))
+}
+
+fn read_cpu_stat() -> Result(List(Int), Nil) {
+  use raw <- result.try(
+    simplifile.read(from: host_stat_path) |> result.replace_error(Nil),
+  )
+  use line <- result.try(
+    string.split(raw, "\n")
+    |> list.find(fn(l) { string.starts_with(l, "cpu ") }),
+  )
+
+  line
+  |> string.drop_start(4)
+  |> string.trim
+  |> string.split(" ")
+  |> list.filter(fn(s) { s != "" })
+  |> list.try_map(int.parse)
+}
+
+fn calc_cpu_percent(a: List(Int), b: List(Int)) -> Float {
+  let total_a = list.fold(a, 0, fn(acc, x) { acc + x })
+  let total_b = list.fold(b, 0, fn(acc, x) { acc + x })
+  let idle_a = list.drop(a, 3) |> list.first |> result.unwrap(0)
+  let idle_b = list.drop(b, 3) |> list.first |> result.unwrap(0)
+
+  let total_delta = total_b - total_a
+  let idle_delta = idle_b - idle_a
+
+  case total_delta == 0 {
+    True -> 0.0
+    False ->
+      float.to_precision(
+        int.to_float(total_delta - idle_delta)
+          /. int.to_float(total_delta)
+          *. 100.0,
+        1,
+      )
+  }
+}
+
+fn read_meminfo() -> Result(#(Int, Int), Nil) {
+  use raw <- result.try(
+    simplifile.read(from: host_meminfo_path) |> result.replace_error(Nil),
+  )
+  use total_kb <- result.try(meminfo_field(raw, "MemTotal"))
+  use avail_kb <- result.try(meminfo_field(raw, "MemAvailable"))
+  Ok(#(total_kb, avail_kb))
+}
+
+fn meminfo_field(raw: String, key: String) -> Result(Int, Nil) {
+  string.split(raw, "\n")
+  |> list.find_map(fn(line) {
+    case string.split_once(line, ":") {
+      Ok(#(k, v)) if k == key ->
+        v |> string.trim |> string.replace(" kB", "") |> int.parse
+      _ -> Error(Nil)
+    }
+  })
+}
+
+/// Port de get-storage-usage.ts. Pas d'équivalent direct de `fs.statfs()` en
+/// Gleam sans dépendance OTP supplémentaire (os_mon/disksup) — on shell-out
+/// via `df -Pk`, comme `os:cmd` est déjà utilisé pour `/shutdown`. `-P` force
+/// un format POSIX stable, portable entre le `df` busybox de l'image finale
+/// et GNU coreutils (vérifié sur les deux).
+pub fn get_storage_usage() -> Result(HostStorageUsage, Nil) {
+  use sd <- result.try(df_info(sd_mount_path))
+  use ssd <- result.try(df_info(ssd_mount_path))
+  Ok(HostStorageUsage(sd: sd, ssd: ssd))
+}
+
+fn df_info(path: String) {
+  let output =
+    os_cmd(charlist.from_string("df -Pk " <> path)) |> charlist.to_string
+
+  use data_line <- result.try(
+    string.split(output, "\n") |> list.drop(1) |> list.first,
+  )
+
+  use #(total_str, avail_str) <- result.try(
+    case string.split(data_line, " ") |> list.filter(fn(s) { s != "" }) {
+      [_, total, _, avail, ..] -> Ok(#(total, avail))
+      _ -> Error(Nil)
+    },
+  )
+
+  use total_kb <- result.try(int.parse(total_str))
+  use avail_kb <- result.try(int.parse(avail_str))
+
+  let total_gb = kb_to_gb(total_kb)
+  let avail_gb = kb_to_gb(avail_kb)
+  let used_gb = float.to_precision(total_gb -. avail_gb, 1)
+  let percent = float.to_precision(used_gb /. total_gb *. 100.0, 1)
+
+  Ok(HostStorageInfo(used_gb: used_gb, total_gb: total_gb, percent: percent))
+}
+
+fn kb_to_gb(kb: Int) -> Float {
+  float.to_precision(int.to_float(kb) /. 1024.0 /. 1024.0, 1)
+}
+
+@external(erlang, "os", "cmd")
+fn os_cmd(command: charlist.Charlist) -> charlist.Charlist
 
 // ── Contrôle ─────────────────────────────────────────────────────────────
 

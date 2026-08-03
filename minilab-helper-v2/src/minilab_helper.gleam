@@ -69,7 +69,7 @@ pub fn main() -> Nil {
                 bot,
                 owner_id,
                 "✅ **minilab-helper v2 démarré !**\n"
-                  <> "Commandes disponibles : `/status` `/resources` `/start` `/stop` `/restart` `/shutdown` `/vpn`",
+                  <> "Commandes disponibles : `/status` `/resources` `/start` `/stop` `/restart` `/shutdown` `/vpn` `/miniprint` `/overview`",
               )
             })
             Nil

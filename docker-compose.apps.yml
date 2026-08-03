@@ -130,6 +130,10 @@ services:
       - DOCKER_HOST=tcp://docker-socket-proxy:2375
     volumes:
       - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
+      - /proc/stat:/host/stat:ro
+      - /proc/meminfo:/host/meminfo:ro
+      - /:/host/rootfs:ro
+      - /mnt/ssd:/host/ssd:ro
     restart: unless-stopped
     network_mode: "service:wireguard"
     depends_on:

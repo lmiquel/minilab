@@ -43,6 +43,23 @@ pub type ResourceUsage {
   ResourceUsage(cpu_percent: Float, mem_usage_mb: Int, mem_percent: Float)
 }
 
+pub type HostResources {
+  HostResources(
+    cpu_percent: Float,
+    mem_used_mb: Int,
+    mem_total_mb: Int,
+    mem_percent: Float,
+  )
+}
+
+pub type HostStorageInfo {
+  HostStorageInfo(used_gb: Float, total_gb: Float, percent: Float)
+}
+
+pub type HostStorageUsage {
+  HostStorageUsage(sd: HostStorageInfo, ssd: HostStorageInfo)
+}
+
 pub type PeerInfo {
   PeerInfo(name: String, connected: Bool, last_handshake: Option(Int))
 }

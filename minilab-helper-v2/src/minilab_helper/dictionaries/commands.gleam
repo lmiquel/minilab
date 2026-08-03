@@ -14,6 +14,8 @@ pub type CommandName {
   Restart
   Shutdown
   Vpn
+  MiniPrint
+  Overview
 }
 
 // ── Définitions ──────────────────────────────────────────────────────────
@@ -30,8 +32,6 @@ fn service_option(description: String) -> slash_command.CommandOption {
   )
 }
 
-/// Définitions des slash commands. MiniPrint arrivera ici au fil du
-/// prochain incrément.
 pub fn command_definitions() -> List(#(CommandName, SlashCommand)) {
   [
     #(
@@ -83,6 +83,22 @@ pub fn command_definitions() -> List(#(CommandName, SlashCommand)) {
       SlashCommand(
         name: "vpn",
         description: "Affiche les peers WireGuard actuellement connectés",
+        options: [],
+      ),
+    ),
+    #(
+      MiniPrint,
+      SlashCommand(
+        name: "miniprint",
+        description: "Affiche le statut et les ressources de l'imprimante MiniPrint",
+        options: [],
+      ),
+    ),
+    #(
+      Overview,
+      SlashCommand(
+        name: "overview",
+        description: "Vue d'ensemble du minilab : statut, ressources et VPN",
         options: [],
       ),
     ),

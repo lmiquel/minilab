@@ -6,12 +6,14 @@ import discord_gleam/ws/packets/interaction_create.{
   type InteractionCreatePacketData, ApplicationCommand, InteractionOption,
   StringValue,
 }
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/order
 import minilab_helper/common.{type ContainerStatus}
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
 import minilab_helper/dictionaries/service_categories
+import minilab_helper/miniprint/types as miniprint_types
 
 // ── Autorisation ─────────────────────────────────────────────────────────
 
@@ -65,6 +67,48 @@ pub fn temp_emoji(celsius: Int) -> String {
       case celsius >= 60 {
         True -> "🟡"
         False -> "🟢"
+      }
+  }
+}
+
+/// Même seuils que `temp_emoji`, pour une température en virgule flottante
+/// (celle renvoyée par Moonraker) — les deux existent séparément puisque
+/// Gleam n'a pas de nombre unique int/float comme TypeScript.
+pub fn temp_emoji_float(celsius: Float) -> String {
+  case celsius >=. 70.0 {
+    True -> "🔴"
+    False ->
+      case celsius >=. 60.0 {
+        True -> "🟡"
+        False -> "🟢"
+      }
+  }
+}
+
+pub fn klippy_state_emoji(
+  state: Option(miniprint_types.KlippyState),
+) -> String {
+  case state {
+    Some(miniprint_types.Ready) -> "🟢"
+    Some(miniprint_types.Startup) -> "🟡"
+    Some(miniprint_types.Shutdown) -> "🔴"
+    Some(miniprint_types.Error) -> "🔴"
+    None -> "⚫"
+  }
+}
+
+/// Port de format-uptime.ts.
+pub fn format_uptime(total_seconds: Int) -> String {
+  let days = total_seconds / 86_400
+  let hours = total_seconds % 86_400 / 3600
+  let minutes = total_seconds % 3600 / 60
+
+  case days > 0 {
+    True -> int.to_string(days) <> "j " <> int.to_string(hours) <> "h"
+    False ->
+      case hours > 0 {
+        True -> int.to_string(hours) <> "h " <> int.to_string(minutes) <> "min"
+        False -> int.to_string(minutes) <> "min"
       }
   }
 }
