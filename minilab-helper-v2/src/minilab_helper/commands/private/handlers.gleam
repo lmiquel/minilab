@@ -137,8 +137,8 @@ pub fn handle_overview(
     wireguard.get_all_peers(wireguard_state)
     |> embed_views.build_overview_vpn_embed()
 
-  let status_result = process.receive(status_subj, within: 8000)
-  let miniprint_embed_result = process.receive(miniprint_subj, within: 8000)
+  let status_result = process.receive(status_subj, within: 20_000)
+  let miniprint_embed_result = process.receive(miniprint_subj, within: 20_000)
 
   case status_result {
     Error(Nil) -> {
