@@ -10,5 +10,5 @@ pub type BackupEntry {
 }
 
 pub type BackupReport {
-  BackupReport(timestamp: String, entries: List(BackupEntry))
+  BackupReport(timestamp: Int, entries: List(BackupEntry))
 }

@@ -66,12 +66,12 @@ backup_files() {
 }
 
 mkdir -p "$BACKUP_ROOT"
-date -Iseconds >"$REPORT_FILE"
+date +%s >"$REPORT_FILE"
 
 log "── $(date) ──"
 
 # ── Services fichiers ────────────────────────────────────────────────────────
-backup_files valheim /mnt/ssd/valheim/worlds
+backup_files valheim /mnt/ssd/valheim/worlds_local
 backup_files cobblemon /mnt/ssd/cobblemon
 backup_files terraria /mnt/ssd/terraria/worlds
 backup_files gitea /mnt/ssd/gitea/data

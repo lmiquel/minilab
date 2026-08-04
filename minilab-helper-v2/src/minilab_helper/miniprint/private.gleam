@@ -122,14 +122,17 @@ fn proc_stats_decoder() -> decode.Decoder(ProcStats) {
     ["result", "system_cpu_usage", "cpu"],
     decode.float,
   )
-  use uptime_sec <- decode.subfield(["result", "system_uptime"], decode.int)
+  // Moonraker renvoie system_uptime en secondes avec une fraction (ex:
+  // 2718.03...), pas un entier — decode.int échouerait sur cette valeur et
+  // ferait échouer tout le décodeur (throttled_state, cpu_temp, etc. avec).
+  use uptime_sec <- decode.subfield(["result", "system_uptime"], decode.float)
 
   decode.success(ProcStats(
     latest_memory_kb: list.last(memory_samples) |> option.from_result,
     throttled_bits: throttled_bits,
     cpu_temp: cpu_temp,
     cpu_percent: cpu_percent,
-    uptime_sec: uptime_sec,
+    uptime_sec: float.round(uptime_sec),
   ))
 }
 

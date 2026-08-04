@@ -15,7 +15,7 @@ pub type Tick {
 type PollingState {
   PollingState(
     self: Subject(Tick),
-    last_seen: booklet.Booklet(Option(String)),
+    last_seen: booklet.Booklet(Option(Int)),
     bot: bot.Bot,
     owner_id: Snowflake(snowflake.User),
   )
