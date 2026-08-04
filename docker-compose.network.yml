@@ -67,6 +67,8 @@ services:
       - ALLOWEDIPS=0.0.0.0/0
       - PERSISTENTKEEPALIVE_PEERS=all
       - LOG_CONFS=true
+    dns:
+      - 172.20.0.3
     volumes:
       - /mnt/ssd/wireguard/config:/config
       - /lib/modules:/lib/modules:ro
