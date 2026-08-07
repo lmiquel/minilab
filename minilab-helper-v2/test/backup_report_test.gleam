@@ -1,7 +1,6 @@
-import minilab_helper/backup_report/private.{parse_report}
-import minilab_helper/backup_report/types.{
+import minilab_helper/backup_report.{
   BackupEntry, BackupFailed, BackupMissing, BackupOk, BackupReport,
-  BackupSkipped,
+  BackupSkipped, parse_report,
 }
 
 pub fn parses_a_real_last_run_log_test() {

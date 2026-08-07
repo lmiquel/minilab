@@ -1,20 +1,110 @@
 import booklet
 import discord_gleam/bot
 import discord_gleam/discord/snowflake.{type Snowflake}
-import gleam/dict
+import gleam/dict.{type Dict}
+import gleam/erlang/process.{type Subject}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/otp/actor
 import gleam/result
-import gleam/set
+import gleam/set.{type Set}
 import gleam/string
 import logging
-import minilab_helper/commons.{type PeerInfo, PeerInfo}
+import minilab_helper/commons
 import minilab_helper/dictionaries/docker_services.{Wireguard}
-import minilab_helper/docker/public as docker
-import minilab_helper/monitoring/public as monitoring
-import minilab_helper/wireguard/types.{
-  type ConnectedPeer, type WireGuardState, ConnectedPeer, WireGuardState,
+import minilab_helper/docker
+import minilab_helper/monitoring
+
+const poll_interval_ms = 15_000
+
+/// 5 minutes sans handshake = déconnecté.
+const peer_timeout_seconds = 300
+
+pub type WireGuardState {
+  WireGuardState(
+    /// pubkey -> timestamp unix du dernier handshake connu
+    seen_handshakes: Dict(String, Int),
+    /// pubkeys actuellement connectés
+    connected_peers: Set(String),
+    /// pubkey -> nom (chargé depuis WG_PEERS)
+    peer_names: Dict(String, String),
+  )
+}
+
+fn new() -> WireGuardState {
+  WireGuardState(
+    seen_handshakes: dict.new(),
+    connected_peers: set.new(),
+    peer_names: dict.new(),
+  )
+}
+
+pub type ConnectedPeer {
+  ConnectedPeer(name: String, since: Int)
+}
+
+pub type PeerInfo {
+  PeerInfo(name: String, connected: Bool, last_handshake: Option(Int))
+}
+
+pub type Tick {
+  Tick
+}
+
+type PollingState {
+  PollingState(
+    self: Subject(Tick),
+    docker: docker.Client,
+    wireguard_state: booklet.Booklet(WireGuardState),
+    bot: bot.Bot,
+    owner_id: Snowflake(snowflake.User),
+  )
+}
+
+pub fn new_state() -> booklet.Booklet(WireGuardState) {
+  booklet.new(new())
+}
+
+pub fn start(
+  docker: docker.Client,
+  state: booklet.Booklet(WireGuardState),
+  bot: bot.Bot,
+  owner_id: Snowflake(snowflake.User),
+) -> Result(actor.Started(Subject(Tick)), actor.StartError) {
+  actor.new_with_initialiser(1000, fn(subject) {
+    process.send_after(subject, poll_interval_ms, Tick)
+
+    actor.initialised(PollingState(
+      self: subject,
+      docker: docker,
+      wireguard_state: state,
+      bot: bot,
+      owner_id: owner_id,
+    ))
+    |> actor.returning(subject)
+    |> Ok
+  })
+  |> actor.on_message(handle_message)
+  |> actor.start()
+}
+
+fn handle_message(
+  state: PollingState,
+  msg: Tick,
+) -> actor.Next(PollingState, Tick) {
+  case msg {
+    Tick -> {
+      check_wireguard_handshakes(
+        state.docker,
+        state.wireguard_state,
+        state.bot,
+        state.owner_id,
+      )
+      process.send_after(state.self, poll_interval_ms, Tick)
+      actor.continue(state)
+    }
+  }
 }
 
 // ── Extraction des pubkeys (pur) ─────────────────────────────────────────
@@ -128,9 +218,6 @@ fn parse_line(line: String) -> Result(#(String, Int), Nil) {
 
 // ── Diff pur (port fidèle de check-wireguard-handshakes.ts) ─────────────
 
-/// 5 minutes sans handshake = déconnecté.
-const peer_timeout_seconds = 300
-
 pub fn diff_handshakes(
   state: WireGuardState,
   handshakes: List(#(String, Int)),
@@ -197,7 +284,7 @@ fn diff_one(
 
 // ── Cycles impurs (shells) ────────────────────────────────────────────────
 
-pub fn check_wireguard_handshakes(
+fn check_wireguard_handshakes(
   docker_client: docker.Client,
   state: booklet.Booklet(WireGuardState),
   bot: bot.Bot,
@@ -274,7 +361,9 @@ pub fn load_peer_names(
 
 // ── Lectures pures ────────────────────────────────────────────────────────
 
-pub fn get_all_peers(state: WireGuardState) -> List(PeerInfo) {
+pub fn get_all_peers(state: booklet.Booklet(WireGuardState)) -> List(PeerInfo) {
+  let state = booklet.get(state)
+
   state.peer_names
   |> dict.to_list
   |> list.map(fn(pair) {
@@ -288,7 +377,11 @@ pub fn get_all_peers(state: WireGuardState) -> List(PeerInfo) {
   })
 }
 
-pub fn get_connected_peers(state: WireGuardState) -> List(ConnectedPeer) {
+pub fn get_connected_peers(
+  state: booklet.Booklet(WireGuardState),
+) -> List(ConnectedPeer) {
+  let state = booklet.get(state)
+
   state.connected_peers
   |> set.to_list
   |> list.map(fn(pubkey) {

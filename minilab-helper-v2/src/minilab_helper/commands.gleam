@@ -2,16 +2,19 @@ import booklet
 import discord_gleam
 import discord_gleam/bot
 import discord_gleam/discord/snowflake.{type Snowflake}
+import discord_gleam/types/interaction
+import discord_gleam/types/message
 import discord_gleam/ws/packets/interaction_create.{
   type InteractionCreatePacketData, ApplicationCommand,
 }
+import gleam/option.{None, Some}
+import gleam/order
 import gleam/string
 import logging
-import minilab_helper/commands/private
-import minilab_helper/commands/private/handlers
+import minilab_helper/commands/handlers
 import minilab_helper/dictionaries/commands.{build_slash_commands}
-import minilab_helper/docker/public as docker
-import minilab_helper/wireguard/types.{type WireGuardState}
+import minilab_helper/docker
+import minilab_helper/wireguard.{type WireGuardState}
 
 pub fn register_commands(bot: bot.Bot) -> Nil {
   case
@@ -37,8 +40,8 @@ pub fn handle_interaction(
   wireguard_state: booklet.Booklet(WireGuardState),
   pkt: InteractionCreatePacketData,
 ) -> Nil {
-  case private.is_owner(pkt, owner_id) {
-    False -> private.reject_unauthorized(pkt)
+  case is_owner(pkt, owner_id) {
+    False -> reject_unauthorized(pkt)
     True ->
       case pkt.data {
         ApplicationCommand(name: name, ..) ->
@@ -68,4 +71,28 @@ fn dispatch(
     "overview" -> handlers.handle_overview(client, wireguard_state, pkt)
     _ -> Nil
   }
+}
+
+// ── Autorisation ─────────────────────────────────────────────────────────
+
+fn is_owner(
+  pkt: InteractionCreatePacketData,
+  owner_id: Snowflake(snowflake.User),
+) -> Bool {
+  case pkt.user, pkt.member {
+    Some(user), _ -> snowflake.compare(user.id, owner_id) == order.Eq
+    None, Some(member) ->
+      snowflake.compare(member.user.id, owner_id) == order.Eq
+    None, None -> False
+  }
+}
+
+fn reject_unauthorized(pkt: InteractionCreatePacketData) -> Nil {
+  let _ =
+    interaction.send_message(
+      pkt,
+      message: message.new("🚫 Tu n'es pas autorisé à utiliser cette commande."),
+      ephemeral: True,
+    )
+  Nil
 }

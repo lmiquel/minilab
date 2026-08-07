@@ -12,11 +12,11 @@ import gleam/otp/static_supervisor.{OneForOne}
 import gleam/otp/supervision
 import gleam/string
 import logging
-import minilab_helper/backup_report/public as backup_report
-import minilab_helper/commands/public as commands
-import minilab_helper/docker/public as docker
-import minilab_helper/monitoring/public as monitoring
-import minilab_helper/wireguard/public as wireguard
+import minilab_helper/backup_report
+import minilab_helper/commands
+import minilab_helper/docker
+import minilab_helper/monitoring
+import minilab_helper/wireguard
 
 pub fn main() -> Nil {
   logging.configure()

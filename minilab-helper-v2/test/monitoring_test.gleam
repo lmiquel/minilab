@@ -1,9 +1,8 @@
-import minilab_helper/commons.{
+import minilab_helper/dictionaries/docker_services.{Cloudflared, Valheim}
+import minilab_helper/docker.{
   ContainerStatus, Healthy, NoHealthcheck, Starting, Unhealthy,
 }
-import minilab_helper/dictionaries/docker_services.{Cloudflared, Valheim}
-import minilab_helper/monitoring/private.{check_status}
-import minilab_helper/monitoring/types.{ServiceState}
+import minilab_helper/monitoring.{ServiceState, check_status}
 
 pub fn first_seen_service_has_no_alert_test() {
   let status = ContainerStatus(Valheim, "running", 0, NoHealthcheck)

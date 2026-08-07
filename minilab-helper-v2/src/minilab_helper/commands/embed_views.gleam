@@ -1,19 +1,21 @@
-import discord_gleam/types/embed
+import discord_gleam/types/embed.{type Embed}
 import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
-import minilab_helper/commands/private
-import minilab_helper/commons.{
-  type ContainerStatus, type PeerInfo, format_date_fr,
+import minilab_helper/commons.{format_date_fr}
+import minilab_helper/dictionaries/docker_services.{
+  type ServiceName, monitored_services,
 }
-import minilab_helper/dictionaries/docker_services.{monitored_services}
-import minilab_helper/docker/public as docker
-import minilab_helper/docker/types.{type DockerError} as _
-import minilab_helper/miniprint/types.{type MiniPrintOverview, Ready} as miniprint_types
-import minilab_helper/wireguard/types.{type ConnectedPeer} as _
+import minilab_helper/dictionaries/service_categories
+import minilab_helper/docker.{type ContainerStatus, type DockerError}
+import minilab_helper/miniprint.{
+  type KlippyState, type MiniPrintOverview, KlippyError, Ready, Shutdown,
+  Startup,
+}
+import minilab_helper/wireguard.{type ConnectedPeer, type PeerInfo}
 
 const color_blurple = 0x5865F2
 
@@ -38,7 +40,7 @@ pub fn build_status_embed(
     )
 
   let with_fields =
-    private.add_grouped_service_fields(base, monitored_services(), fn(service) {
+    add_grouped_service_fields(base, monitored_services(), fn(service) {
       status_field_value(statuses, service)
     })
 
@@ -50,7 +52,7 @@ fn status_field_value(statuses: List(ContainerStatus), service) {
     Error(Nil) -> None
     Ok(status) ->
       Some(
-        private.render_container_state_line(status)
+        render_container_state_line(status)
         <> "  •  🔁 "
         <> int.to_string(status.restart_count),
       )
@@ -63,7 +65,7 @@ pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
   let description = case docker.get_rpi_temperature() {
     Ok(temp) ->
       "🌡️ Température RPi : "
-      <> private.temp_emoji(temp)
+      <> temp_emoji(temp)
       <> " **"
       <> int.to_string(temp)
       <> "°C**"
@@ -77,7 +79,7 @@ pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
       color: color_green,
     )
 
-  private.add_grouped_service_fields(base, monitored_services(), fn(service) {
+  add_grouped_service_fields(base, monitored_services(), fn(service) {
     let value = case docker.get_resource_usage(client, service) {
       Ok(usage) ->
         "CPU : `"
@@ -148,10 +150,7 @@ pub fn build_miniprint_embed(
     True -> {
       let temp_str = case overview.cpu_temp_c {
         Some(temp) ->
-          private.temp_emoji_float(temp)
-          <> " **"
-          <> float.to_string(temp)
-          <> "°C**"
+          temp_emoji_float(temp) <> " **" <> float.to_string(temp) <> "°C**"
         None -> "❌ indisponible"
       }
 
@@ -185,7 +184,7 @@ pub fn build_miniprint_embed(
       }
 
       let uptime_str = case overview.uptime_sec {
-        Some(uptime) -> private.format_uptime(uptime)
+        Some(uptime) -> format_uptime(uptime)
         None -> "❌"
       }
 
@@ -245,7 +244,7 @@ pub fn build_miniprint_embed(
       )
       |> embed.add_field(
         name: "🔩 Klipper",
-        value: private.klippy_state_emoji(overview.klippy_state)
+        value: klippy_state_emoji(overview.klippy_state)
           <> " `"
           <> klippy_state_label(overview.klippy_state)
           <> "`",
@@ -268,12 +267,12 @@ pub fn build_miniprint_embed(
   }
 }
 
-fn klippy_state_label(state: Option(miniprint_types.KlippyState)) -> String {
+fn klippy_state_label(state: Option(KlippyState)) -> String {
   case state {
     Some(Ready) -> "ready"
-    Some(miniprint_types.Startup) -> "startup"
-    Some(miniprint_types.Shutdown) -> "shutdown"
-    Some(miniprint_types.Error) -> "error"
+    Some(Startup) -> "startup"
+    Some(Shutdown) -> "shutdown"
+    Some(KlippyError) -> "error"
     None -> "injoignable"
   }
 }
@@ -303,8 +302,7 @@ pub fn build_overview_status_resources_embed(
   use statuses <- result.try(docker.get_all_statuses(client))
 
   let temp_str = case docker.get_rpi_temperature() {
-    Ok(temp) ->
-      private.temp_emoji(temp) <> " **" <> int.to_string(temp) <> "°C**"
+    Ok(temp) -> temp_emoji(temp) <> " **" <> int.to_string(temp) <> "°C**"
     Error(_) -> "❌ indisponible"
   }
 
@@ -353,7 +351,7 @@ pub fn build_overview_status_resources_embed(
     )
 
   let with_fields =
-    private.add_grouped_service_fields(base, monitored_services(), fn(service) {
+    add_grouped_service_fields(base, monitored_services(), fn(service) {
       overview_field_value(client, statuses, service)
     })
 
@@ -369,7 +367,7 @@ fn overview_field_value(
     Error(Nil) -> None
     Ok(status) -> {
       let state_part =
-        private.render_container_state_line(status)
+        render_container_state_line(status)
         <> "  •  🔁 "
         <> int.to_string(status.restart_count)
 
@@ -438,4 +436,108 @@ pub fn build_overview_vpn_embed(peers: List(PeerInfo)) -> embed.Embed {
       })
     }
   }
+}
+
+// ── Rendu (helpers colocalisés depuis l'ancien commands/private.gleam) ────
+
+pub fn temp_emoji(celsius: Int) -> String {
+  case celsius >= 70 {
+    True -> "🔴"
+    False ->
+      case celsius >= 60 {
+        True -> "🟡"
+        False -> "🟢"
+      }
+  }
+}
+
+pub fn temp_emoji_float(celsius: Float) -> String {
+  case celsius >=. 70.0 {
+    True -> "🔴"
+    False ->
+      case celsius >=. 60.0 {
+        True -> "🟡"
+        False -> "🟢"
+      }
+  }
+}
+
+pub fn klippy_state_emoji(state: Option(KlippyState)) -> String {
+  case state {
+    Some(Ready) -> "🟢"
+    Some(Startup) -> "🟡"
+    Some(Shutdown) -> "🔴"
+    Some(KlippyError) -> "🔴"
+    None -> "⚫"
+  }
+}
+
+pub fn format_uptime(total_seconds: Int) -> String {
+  let days = total_seconds / 86_400
+  let hours = total_seconds % 86_400 / 3600
+  let minutes = total_seconds % 3600 / 60
+
+  case days > 0 {
+    True -> int.to_string(days) <> "j " <> int.to_string(hours) <> "h"
+    False ->
+      case hours > 0 {
+        True -> int.to_string(hours) <> "h " <> int.to_string(minutes) <> "min"
+        False -> int.to_string(minutes) <> "min"
+      }
+  }
+}
+
+fn render_container_state_line(status: ContainerStatus) -> String {
+  let is_running = status.state == "running"
+  let has_health = status.health != docker.NoHealthcheck
+
+  case has_health && is_running {
+    True ->
+      docker.health_emoji(status.health)
+      <> " `"
+      <> docker.health_status_to_string(status.health)
+      <> "`"
+
+    False -> {
+      let dot = case is_running {
+        True -> "🟢"
+        False -> "🔴"
+      }
+      dot <> " `" <> status.state <> "`"
+    }
+  }
+}
+
+fn add_grouped_service_fields(
+  embed: Embed,
+  services: List(ServiceName),
+  build_value: fn(ServiceName) -> Option(String),
+) -> Embed {
+  docker_services.group_by_category(services)
+  |> list.fold(embed, fn(embed, pair) {
+    let #(category, services_in_category) = pair
+
+    let embed =
+      embed.add_field(
+        embed,
+        name: "​",
+        value: "**" <> service_categories.category_label(category) <> "**",
+        inline: False,
+      )
+
+    list.fold(services_in_category, embed, fn(embed, service) {
+      case build_value(service) {
+        None -> embed
+        Some(value) -> {
+          let definition = docker_services.get_service(service)
+          embed.add_field(
+            embed,
+            name: definition.emoji <> " " <> definition.label,
+            value: value,
+            inline: True,
+          )
+        }
+      }
+    })
+  })
 }

@@ -8,7 +8,6 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import minilab_helper/miniprint/types
 
 const miniprint_host = "mini.print"
 
@@ -21,6 +20,38 @@ const crowsnest_port = 8080
 const fetch_timeout_ms = 4000
 
 const receive_timeout_ms = 4500
+
+pub type KlippyState {
+  Ready
+  Startup
+  Shutdown
+  KlippyError
+}
+
+pub type ThrottledState {
+  ThrottledState(bits: Int)
+}
+
+pub type PrinterStorageInfo {
+  PrinterStorageInfo(used_gb: Float, total_gb: Float, percent: Float)
+}
+
+pub type MiniPrintOverview {
+  MiniPrintOverview(
+    reachable: Bool,
+    cpu_temp_c: Option(Float),
+    cpu_percent: Option(Float),
+    moonraker_mem_mb: Option(Int),
+    total_mem_mb: Option(Int),
+    uptime_sec: Option(Int),
+    throttled: Option(ThrottledState),
+    storage: Option(PrinterStorageInfo),
+    mainsail_up: Bool,
+    moonraker_up: Bool,
+    klippy_state: Option(KlippyState),
+    crowsnest_up: Bool,
+  )
+}
 
 // ── Requêtes bas niveau ──────────────────────────────────────────────────
 
@@ -85,12 +116,12 @@ fn server_info_decoder() -> decode.Decoder(String) {
   decode.success(state)
 }
 
-fn klippy_state_from_string(state: String) -> Option(types.KlippyState) {
+fn klippy_state_from_string(state: String) -> Option(KlippyState) {
   case state {
-    "ready" -> Some(types.Ready)
-    "startup" -> Some(types.Startup)
-    "shutdown" -> Some(types.Shutdown)
-    "error" -> Some(types.Error)
+    "ready" -> Some(Ready)
+    "startup" -> Some(Startup)
+    "shutdown" -> Some(Shutdown)
+    "error" -> Some(KlippyError)
     _ -> None
   }
 }
@@ -164,7 +195,7 @@ fn kb_to_mb(kb: Int) -> Int {
 
 // ── Overview ─────────────────────────────────────────────────────────────
 
-pub fn get_overview() -> types.MiniPrintOverview {
+pub fn get_overview() -> MiniPrintOverview {
   let moonraker =
     "http://" <> miniprint_host <> ":" <> int.to_string(moonraker_port)
 
@@ -238,7 +269,7 @@ pub fn get_overview() -> types.MiniPrintOverview {
 
   let moonraker_up = option.is_some(klippy_state_str)
 
-  types.MiniPrintOverview(
+  MiniPrintOverview(
     reachable: moonraker_up || mainsail_up,
     cpu_temp_c: option.map(proc_stats, fn(p) { p.cpu_temp }),
     cpu_percent: option.map(proc_stats, fn(p) { p.cpu_percent }),
@@ -248,10 +279,10 @@ pub fn get_overview() -> types.MiniPrintOverview {
     total_mem_mb: option.map(total_memory_kb, kb_to_mb),
     uptime_sec: option.map(proc_stats, fn(p) { p.uptime_sec }),
     throttled: option.map(proc_stats, fn(p) {
-      types.ThrottledState(bits: p.throttled_bits)
+      ThrottledState(bits: p.throttled_bits)
     }),
     storage: option.map(disk_usage, fn(d) {
-      types.PrinterStorageInfo(
+      PrinterStorageInfo(
         used_gb: bytes_to_gb(d.used),
         total_gb: bytes_to_gb(d.total),
         percent: float.to_precision(

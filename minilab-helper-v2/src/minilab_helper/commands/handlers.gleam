@@ -4,7 +4,8 @@ import discord_gleam/discord/snowflake.{type Snowflake}
 import discord_gleam/types/interaction
 import discord_gleam/types/message
 import discord_gleam/ws/packets/interaction_create.{
-  type InteractionCreatePacketData,
+  type InteractionCreatePacketData, ApplicationCommand, InteractionOption,
+  StringValue,
 }
 import gleam/erlang/charlist
 import gleam/erlang/process
@@ -12,15 +13,15 @@ import gleam/list
 import gleam/option
 import gleam/string
 import logging
-import minilab_helper/commands/private
-import minilab_helper/commands/private/embed_views
-import minilab_helper/dictionaries/docker_services.{all_services, get_service}
+import minilab_helper/commands/embed_views
+import minilab_helper/dictionaries/docker_services.{
+  type ServiceName, all_services, get_service, service_name_from_string,
+}
 import minilab_helper/dictionaries/service_categories.{Network}
-import minilab_helper/docker/public as docker
-import minilab_helper/miniprint/public as miniprint
-import minilab_helper/monitoring/public as monitoring
-import minilab_helper/wireguard/public as wireguard
-import minilab_helper/wireguard/types.{type WireGuardState}
+import minilab_helper/docker
+import minilab_helper/miniprint
+import minilab_helper/monitoring
+import minilab_helper/wireguard.{type WireGuardState}
 
 // ── /status ──────────────────────────────────────────────────────────────
 
@@ -204,7 +205,7 @@ pub fn handle_start(
 ) -> Nil {
   let _ = interaction.defer_response(pkt, ephemeral: True)
 
-  case private.get_service_option(pkt) {
+  case get_service_option(pkt) {
     Error(Nil) -> {
       let _ =
         interaction.edit_response(
@@ -261,7 +262,7 @@ pub fn handle_stop(
 ) -> Nil {
   let _ = interaction.defer_response(pkt, ephemeral: True)
 
-  case private.get_service_option(pkt) {
+  case get_service_option(pkt) {
     Error(Nil) -> {
       let _ =
         interaction.edit_response(
@@ -335,7 +336,7 @@ pub fn handle_restart(
 ) -> Nil {
   let _ = interaction.defer_response(pkt, ephemeral: True)
 
-  case private.get_service_option(pkt) {
+  case get_service_option(pkt) {
     Error(Nil) -> {
       let _ =
         interaction.edit_response(
@@ -426,3 +427,19 @@ pub fn handle_shutdown(
 
 @external(erlang, "os", "cmd")
 fn os_cmd(command: charlist.Charlist) -> charlist.Charlist
+
+// ── Options de commande (colocalisé depuis l'ancien commands/private.gleam) ─
+
+fn get_service_option(
+  pkt: InteractionCreatePacketData,
+) -> Result(ServiceName, Nil) {
+  case pkt.data {
+    ApplicationCommand(options: option.Some(options), ..) ->
+      case list.find(options, fn(opt) { opt.name == "service" }) {
+        Ok(InteractionOption(value: StringValue(raw), ..)) ->
+          service_name_from_string(raw)
+        _ -> Error(Nil)
+      }
+    _ -> Error(Nil)
+  }
+}

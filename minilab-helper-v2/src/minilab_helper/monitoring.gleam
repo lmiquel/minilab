@@ -1,16 +1,102 @@
+import discord_gleam
+import discord_gleam/bot
+import discord_gleam/discord/snowflake.{type Snowflake}
+import discord_gleam/types/message
 import gleam/dict.{type Dict}
+import gleam/erlang/process.{type Subject}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/otp/actor
 import gleam/string
-import minilab_helper/commons.{
+import logging
+import minilab_helper/dictionaries/docker_services.{type ServiceName}
+import minilab_helper/docker.{
   type ContainerStatus, type HealthStatus, Healthy, NoHealthcheck, Unhealthy,
 }
-import minilab_helper/dictionaries/docker_services.{type ServiceName}
-import minilab_helper/docker/public as docker
-import minilab_helper/monitoring/types.{type ServiceState, ServiceState}
+
+const poll_interval_ms = 60_000
+
+const initial_delay_ms = 5000
 
 const restart_alert_threshold = 3
+
+pub type ServiceState {
+  ServiceState(
+    last_state: String,
+    last_health: HealthStatus,
+    last_restart_count: Int,
+    alerted_restart: Bool,
+  )
+}
+
+pub type Tick {
+  Tick
+}
+
+type PollingState {
+  PollingState(
+    self: Subject(Tick),
+    bot: bot.Bot,
+    owner_id: Snowflake(snowflake.User),
+    docker: docker.Client,
+    service_states: dict.Dict(ServiceName, ServiceState),
+  )
+}
+
+pub fn start(
+  bot: bot.Bot,
+  owner_id: Snowflake(snowflake.User),
+  docker: docker.Client,
+) -> Result(actor.Started(Subject(Tick)), actor.StartError) {
+  actor.new_with_initialiser(1000, fn(subject) {
+    process.send_after(subject, initial_delay_ms, Tick)
+
+    actor.initialised(PollingState(
+      self: subject,
+      bot: bot,
+      owner_id: owner_id,
+      docker: docker,
+      service_states: dict.new(),
+    ))
+    |> actor.returning(subject)
+    |> Ok
+  })
+  |> actor.on_message(handle_message)
+  |> actor.start()
+}
+
+fn handle_message(
+  state: PollingState,
+  msg: Tick,
+) -> actor.Next(PollingState, Tick) {
+  case msg {
+    Tick -> {
+      let new_states =
+        poll_statuses(state.docker, state.service_states, fn(text) {
+          dm(state.bot, state.owner_id, text)
+        })
+
+      process.send_after(state.self, poll_interval_ms, Tick)
+      actor.continue(PollingState(..state, service_states: new_states))
+    }
+  }
+}
+
+pub fn dm(
+  bot: bot.Bot,
+  owner_id: Snowflake(snowflake.User),
+  text: String,
+) -> Nil {
+  case discord_gleam.send_direct_message(bot, owner_id, message.new(text)) {
+    Ok(_) -> Nil
+    Error(err) ->
+      logging.log(
+        logging.Error,
+        "[Monitor] Erreur envoi DM: " <> string.inspect(err),
+      )
+  }
+}
 
 // ── Diff pur (port fidèle de check-status.ts) ───────────────────────────
 
@@ -129,7 +215,7 @@ fn diff_health(
       case status.health {
         Unhealthy ->
           Some(
-            commons.health_emoji(status.health)
+            docker.health_emoji(status.health)
             <> " **"
             <> label
             <> "** est `unhealthy` !\n"
@@ -142,7 +228,7 @@ fn diff_health(
           case prev.last_health == Unhealthy {
             True ->
               Some(
-                commons.health_emoji(status.health)
+                docker.health_emoji(status.health)
                 <> " **"
                 <> label
                 <> "** est de nouveau `healthy`.",
@@ -190,7 +276,7 @@ fn diff_restart_count(
 
 // ── Cycle de polling (impur, port de poll-statuses.ts) ──────────────────
 
-pub fn poll_statuses(
+fn poll_statuses(
   client: docker.Client,
   states: Dict(ServiceName, ServiceState),
   dm: fn(String) -> Nil,

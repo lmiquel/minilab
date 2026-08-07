@@ -1,7 +1,8 @@
 import gleam/dict
 import gleam/set
-import minilab_helper/wireguard/private.{diff_handshakes, extract_pubkeys}
-import minilab_helper/wireguard/types.{WireGuardState}
+import minilab_helper/wireguard.{
+  WireGuardState, diff_handshakes, extract_pubkeys,
+}
 
 const now = 1_000_000
 

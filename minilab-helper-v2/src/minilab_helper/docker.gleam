@@ -14,17 +14,69 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri
-import minilab_helper/commons.{
-  type ContainerStatus, type HealthStatus, type HostResources,
-  type HostStorageUsage, type ResourceUsage, ContainerStatus, Healthy,
-  HostResources, HostStorageInfo, HostStorageUsage, NoHealthcheck, ResourceUsage,
-  Starting, Unhealthy,
-}
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
-import minilab_helper/docker/types.{
-  type DockerError, DecodeError, HttpError, UnexpectedStatus,
-}
 import simplifile
+
+pub type DockerError {
+  HttpError(String)
+  UnexpectedStatus(Int, String)
+  DecodeError(String)
+}
+
+pub type HealthStatus {
+  Healthy
+  Unhealthy
+  Starting
+  NoHealthcheck
+}
+
+pub fn health_status_to_string(status: HealthStatus) -> String {
+  case status {
+    Healthy -> "healthy"
+    Unhealthy -> "unhealthy"
+    Starting -> "starting"
+    NoHealthcheck -> "none"
+  }
+}
+
+pub fn health_emoji(status: HealthStatus) -> String {
+  case status {
+    Healthy -> "💚"
+    Unhealthy -> "❤️‍🩹"
+    Starting -> "⏳"
+    NoHealthcheck -> "⬜"
+  }
+}
+
+pub type ContainerStatus {
+  ContainerStatus(
+    name: ServiceName,
+    state: String,
+    restart_count: Int,
+    health: HealthStatus,
+  )
+}
+
+pub type ResourceUsage {
+  ResourceUsage(cpu_percent: Float, mem_usage_mb: Int, mem_percent: Float)
+}
+
+pub type HostResources {
+  HostResources(
+    cpu_percent: Float,
+    mem_used_mb: Int,
+    mem_total_mb: Int,
+    mem_percent: Float,
+  )
+}
+
+pub type HostStorageInfo {
+  HostStorageInfo(used_gb: Float, total_gb: Float, percent: Float)
+}
+
+pub type HostStorageUsage {
+  HostStorageUsage(sd: HostStorageInfo, ssd: HostStorageInfo)
+}
 
 // ── Client & requêtes bas niveau ─────────────────────────────────────────
 
@@ -32,7 +84,7 @@ pub type Client {
   Client(host: String, port: Int)
 }
 
-pub fn create_docker_client() -> Client {
+pub fn new_client() -> Client {
   let assert Ok(docker_host) = envoy.get("DOCKER_HOST")
   let assert Ok(parsed) = uri.parse(docker_host)
   let assert Some(host) = parsed.host
@@ -46,7 +98,7 @@ pub fn create_docker_client() -> Client {
 }
 
 /// Effectue un GET sur le docker-socket-proxy et renvoie le corps brut.
-pub fn get_json(client: Client, path: String) -> Result(String, DockerError) {
+fn get_json(client: Client, path: String) -> Result(String, DockerError) {
   let req =
     request.new()
     |> request.set_scheme(http.Http)
@@ -63,7 +115,7 @@ pub fn get_json(client: Client, path: String) -> Result(String, DockerError) {
 }
 
 /// POST à corps vide. 204 et 304 (déjà démarré/arrêté) sont des succès.
-pub fn post_empty(client: Client, path: String) -> Result(Nil, DockerError) {
+fn post_empty(client: Client, path: String) -> Result(Nil, DockerError) {
   let req =
     request.new()
     |> request.set_scheme(http.Http)
@@ -81,7 +133,7 @@ pub fn post_empty(client: Client, path: String) -> Result(Nil, DockerError) {
 }
 
 /// POST avec un corps JSON, renvoie le corps de la réponse (200/201 = succès).
-pub fn post_json(
+fn post_json(
   client: Client,
   path: String,
   body: String,
@@ -106,7 +158,7 @@ pub fn post_json(
 /// POST avec un corps JSON, renvoie le corps brut de la réponse (BitArray,
 /// pas de décodage UTF-8) — utilisé pour lire un flux Docker exec multiplexé
 /// sans corrompre les en-têtes de frame binaires.
-pub fn post_json_bits(
+fn post_json_bits(
   client: Client,
   path: String,
   body: String,
@@ -135,7 +187,7 @@ pub fn post_json_bits(
 // ── Statuts ──────────────────────────────────────────────────────────────
 
 /// Renvoie le statut du conteneur d'un service (GET /containers/{name}/json).
-pub fn get_container_status(
+fn get_container_status(
   client: Client,
   name: ServiceName,
 ) -> Result(ContainerStatus, DockerError) {
@@ -459,7 +511,7 @@ pub fn restart_service(
 
 // ── Exec ─────────────────────────────────────────────────────────────────
 
-pub fn exec_in_container(
+pub fn exec(
   client: Client,
   name: ServiceName,
   cmd: String,

@@ -1,8 +1,8 @@
 import gleam/option.{None, Some}
-import minilab_helper/commands/private.{
+import minilab_helper/commands/embed_views.{
   format_uptime, klippy_state_emoji, temp_emoji_float,
 }
-import minilab_helper/miniprint/types as miniprint_types
+import minilab_helper/miniprint.{KlippyError, Ready, Shutdown, Startup}
 
 pub fn format_uptime_under_a_minute_test() {
   assert format_uptime(0) == "0min"
@@ -21,19 +21,19 @@ pub fn format_uptime_days_and_hours_test() {
 }
 
 pub fn klippy_state_emoji_ready_test() {
-  assert klippy_state_emoji(Some(miniprint_types.Ready)) == "🟢"
+  assert klippy_state_emoji(Some(Ready)) == "🟢"
 }
 
 pub fn klippy_state_emoji_startup_test() {
-  assert klippy_state_emoji(Some(miniprint_types.Startup)) == "🟡"
+  assert klippy_state_emoji(Some(Startup)) == "🟡"
 }
 
 pub fn klippy_state_emoji_shutdown_test() {
-  assert klippy_state_emoji(Some(miniprint_types.Shutdown)) == "🔴"
+  assert klippy_state_emoji(Some(Shutdown)) == "🔴"
 }
 
 pub fn klippy_state_emoji_error_test() {
-  assert klippy_state_emoji(Some(miniprint_types.Error)) == "🔴"
+  assert klippy_state_emoji(Some(KlippyError)) == "🔴"
 }
 
 pub fn klippy_state_emoji_unreachable_test() {
