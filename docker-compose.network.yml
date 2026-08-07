@@ -63,6 +63,7 @@ services:
       - SERVERPORT=51820
       - PEERS=${WG_PEERS}
       - PEERDNS=172.20.0.3
+      - USE_COREDNS=false
       - INTERNAL_SUBNET=10.13.13.0
       - ALLOWEDIPS=0.0.0.0/0
       - PERSISTENTKEEPALIVE_PEERS=all
