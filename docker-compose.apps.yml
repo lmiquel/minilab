@@ -43,39 +43,6 @@ services:
     labels:
       - "minilab.service=rollerderbyscoreboard"
 
-  minilab-helper:
-    build:
-      context: ./minilab-helper
-      dockerfile: Dockerfile
-    container_name: minilab-helper
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
-      - WG_PEERS=${WG_PEERS}
-      - TZ=Europe/Paris
-      - DOCKER_HOST=tcp://docker-socket-proxy:2375
-    volumes:
-      - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
-      - /proc/stat:/host/stat:ro
-      - /proc/meminfo:/host/meminfo:ro
-      - /:/host/rootfs:ro
-      - /mnt/ssd:/host/ssd:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "process.exit(0)"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    network_mode: "service:wireguard"
-    depends_on:
-      docker-socket-proxy:
-        condition: service_healthy
-      wireguard:
-        condition: service_healthy
-    labels:
-      - "minilab.service=minilab-helper"
-
   minilab-helper-v2:
     build:
       context: ./minilab-helper-v2
