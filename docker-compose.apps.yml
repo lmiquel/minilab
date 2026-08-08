@@ -70,26 +70,3 @@ services:
         condition: service_healthy
     labels:
       - "minilab.service=minilab-helper-v2"
-
-  minilab-helper-v3:
-    build:
-      context: ./minilab-helper-v3
-      dockerfile: Dockerfile
-    container_name: minilab-helper-v3
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN_V3}
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID_V3}
-      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
-      - TZ=Europe/Paris
-      - DOCKER_HOST=tcp://docker-socket-proxy:2375
-    volumes:
-      - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
-    restart: unless-stopped
-    network_mode: "service:wireguard"
-    depends_on:
-      docker-socket-proxy:
-        condition: service_healthy
-      wireguard:
-        condition: service_healthy
-    labels:
-      - "minilab.service=minilab-helper-v3"

@@ -12,9 +12,6 @@ build/
 erl_crash.dump
 *.beam
 
-# Cargo
-target/
-
 # Build
 *.zip
 .claude/
