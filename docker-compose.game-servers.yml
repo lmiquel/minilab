@@ -67,25 +67,19 @@ services:
     labels:
       - "minilab.service=cobblemon"
 
-  terraria:
-    image: hexlo/terraria-server-docker:latest
-    container_name: terraria
-    tty: true
-    stdin_open: true
+  xmage:
+    build:
+      context: ./xmage
+      dockerfile: Dockerfile
+    container_name: xmage
     environment:
       - TZ=Europe/Paris
-      - world=${TERRARIA_WORLD_NAME}.wld
-      - autocreate=2
-      - difficulty=0
-      - maxplayers=8
-      - password=${TERRARIA_PASSWORD}
-      - motd=${TERRARIA_MOTD}
-      - language=fr/FR
+      - XMAGE_SERVER_NAME=${XMAGE_SERVER_NAME}
     volumes:
-      - /mnt/ssd/terraria/worlds:/root/.local/share/Terraria/Worlds
+      - /mnt/ssd/xmage:/app/db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/7777"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17171"]
       interval: 60s
       timeout: 5s
       retries: 3
@@ -95,4 +89,4 @@ services:
       wireguard:
         condition: service_healthy
     labels:
-      - "minilab.service=terraria"
+      - "minilab.service=xmage"

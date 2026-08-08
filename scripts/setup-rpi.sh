@@ -87,7 +87,7 @@ ufw allow from 192.168.0.0/16 to any port 53
 ufw allow from 10.0.0.0/8    to any port 53
 ufw allow from 172.16.0.0/12 to any port 53
 
-# Aucun service de jeu (Valheim, Cobblemon, Terraria, RollerDerby) ne publie
+# Aucun service de jeu (Valheim, Cobblemon, XMage, RollerDerby) ne publie
 # de port hôte : ils tournent tous en network_mode: service:wireguard, donc
 # rien à ouvrir dans UFW pour eux — les joueurs passent obligatoirement par
 # le tunnel WireGuard.

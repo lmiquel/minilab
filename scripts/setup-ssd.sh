@@ -53,7 +53,7 @@ mkdir -p \
   "$MOUNT_POINT/duckdns/config" \
   "$MOUNT_POINT/wireguard/config" \
   "$MOUNT_POINT/cobblemon" \
-  "$MOUNT_POINT/terraria/worlds" \
+  "$MOUNT_POINT/xmage" \
   "$MOUNT_POINT/mariadb/config" \
   "$MOUNT_POINT/gitea/data" \
   "$MOUNT_POINT/pingvin/data" \

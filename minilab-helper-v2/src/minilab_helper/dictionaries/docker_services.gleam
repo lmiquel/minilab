@@ -8,7 +8,7 @@ import minilab_helper/dictionaries/service_categories.{
 pub type ServiceName {
   Valheim
   Cobblemon
-  Terraria
+  XMage
   PingvinShare
   RollerDerbyScoreboard
   Gitea
@@ -43,10 +43,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
       Cobblemon,
       ServiceDefinition("cobblemon", "Cobblemon", "🎊", Game, True, True),
     ),
-    #(
-      Terraria,
-      ServiceDefinition("terraria", "Terraria", "⛏️", Game, True, True),
-    ),
+    #(XMage, ServiceDefinition("xmage", "XMage", "🃏", Game, True, True)),
     #(
       PingvinShare,
       ServiceDefinition("pingvin-share", "Pingvin Share", "🐧", Apps, True, True),
@@ -126,7 +123,7 @@ pub fn service_name_to_string(name: ServiceName) -> String {
   case name {
     Valheim -> "valheim"
     Cobblemon -> "cobblemon"
-    Terraria -> "terraria"
+    XMage -> "xmage"
     PingvinShare -> "pingvinshare"
     RollerDerbyScoreboard -> "rollerderbyscoreboard"
     Gitea -> "gitea"
@@ -146,7 +143,7 @@ pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
   case value {
     "valheim" -> Ok(Valheim)
     "cobblemon" -> Ok(Cobblemon)
-    "terraria" -> Ok(Terraria)
+    "xmage" -> Ok(XMage)
     "pingvinshare" -> Ok(PingvinShare)
     "rollerderbyscoreboard" -> Ok(RollerDerbyScoreboard)
     "gitea" -> Ok(Gitea)
