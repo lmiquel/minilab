@@ -29,6 +29,8 @@ pub type WireGuardState {
     connected_peers: Set(String),
     /// pubkey -> nom (chargé depuis WG_PEERS)
     peer_names: Dict(String, String),
+    /// pubkeys dans l'ordre de déclaration de WG_PEERS (les Dict n'ont pas d'ordre stable)
+    peer_order: List(String),
   )
 }
 
@@ -37,6 +39,7 @@ fn new() -> WireGuardState {
     seen_handshakes: dict.new(),
     connected_peers: set.new(),
     peer_names: dict.new(),
+    peer_order: [],
   )
 }
 
@@ -336,7 +339,16 @@ pub fn load_peer_names(
           )
       }
 
-      list.zip(pubkeys, peers)
+      let pairs = list.zip(pubkeys, peers)
+
+      booklet.update(state, fn(current) {
+        WireGuardState(
+          ..current,
+          peer_order: list.map(pairs, fn(pair) { pair.0 }),
+        )
+      })
+
+      pairs
       |> list.each(fn(pair) {
         let #(pubkey, name) = pair
         booklet.update(state, fn(current) {
@@ -364,10 +376,11 @@ pub fn load_peer_names(
 pub fn get_all_peers(state: booklet.Booklet(WireGuardState)) -> List(PeerInfo) {
   let state = booklet.get(state)
 
-  state.peer_names
-  |> dict.to_list
-  |> list.map(fn(pair) {
-    let #(pubkey, name) = pair
+  state.peer_order
+  |> list.map(fn(pubkey) {
+    let name =
+      dict.get(state.peer_names, pubkey)
+      |> result.unwrap("clé inconnue " <> string.slice(pubkey, 0, 10) <> "…")
     PeerInfo(
       name: name,
       connected: set.contains(state.connected_peers, pubkey),

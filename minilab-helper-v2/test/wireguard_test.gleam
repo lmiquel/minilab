@@ -1,4 +1,5 @@
 import gleam/dict
+import gleam/list
 import gleam/set
 import minilab_helper/wireguard.{
   WireGuardState, diff_handshakes, extract_pubkeys,
@@ -11,6 +12,7 @@ const pubkey = "PUBKEY"
 fn state_with(peer_names, connected_peers, seen_handshakes) {
   WireGuardState(
     peer_names: dict.from_list(peer_names),
+    peer_order: list.map(peer_names, fn(pair) { pair.0 }),
     connected_peers: set.from_list(connected_peers),
     seen_handshakes: dict.from_list(seen_handshakes),
   )
