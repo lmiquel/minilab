@@ -1,4 +1,5 @@
 import discord_gleam/types/embed.{type Embed}
+import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
@@ -79,9 +80,11 @@ pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
       color: color_green,
     )
 
+  let usages = docker.get_all_resource_usages(client, monitored_services())
+
   add_grouped_service_fields(base, monitored_services(), fn(service) {
-    let value = case docker.get_resource_usage(client, service) {
-      Ok(usage) ->
+    let value = case dict.get(usages, service) {
+      Ok(Ok(usage)) ->
         "CPU : `"
         <> float.to_string(usage.cpu_percent)
         <> "%`\nRAM : `"
@@ -89,7 +92,7 @@ pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
         <> "MB ("
         <> float.to_string(usage.mem_percent)
         <> "%)`"
-      Error(_) -> "❌ Stats indisponibles\n(conteneur arrêté ?)"
+      _ -> "❌ Stats indisponibles\n(conteneur arrêté ?)"
     }
     Some(value)
   })
@@ -350,16 +353,23 @@ pub fn build_overview_status_resources_embed(
       color: color_blurple,
     )
 
+  let running_services =
+    statuses
+    |> list.filter(fn(status) { status.state == "running" })
+    |> list.map(fn(status) { status.name })
+
+  let usages = docker.get_all_resource_usages(client, running_services)
+
   let with_fields =
     add_grouped_service_fields(base, monitored_services(), fn(service) {
-      overview_field_value(client, statuses, service)
+      overview_field_value(usages, statuses, service)
     })
 
   Ok(with_fields)
 }
 
 fn overview_field_value(
-  client: docker.Client,
+  usages: dict.Dict(ServiceName, Result(docker.ResourceUsage, DockerError)),
   statuses: List(ContainerStatus),
   service,
 ) {
@@ -371,18 +381,14 @@ fn overview_field_value(
         <> "  •  🔁 "
         <> int.to_string(status.restart_count)
 
-      let res_part = case status.state == "running" {
-        False -> ""
-        True ->
-          case docker.get_resource_usage(client, service) {
-            Ok(usage) ->
-              "\nCPU `"
-              <> float.to_string(usage.cpu_percent)
-              <> "%` \nRAM `"
-              <> int.to_string(usage.mem_usage_mb)
-              <> "MB`"
-            Error(_) -> ""
-          }
+      let res_part = case dict.get(usages, service) {
+        Ok(Ok(usage)) ->
+          "\nCPU `"
+          <> float.to_string(usage.cpu_percent)
+          <> "%` \nRAM `"
+          <> int.to_string(usage.mem_usage_mb)
+          <> "MB`"
+        _ -> ""
       }
 
       Some(state_part <> res_part)

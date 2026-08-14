@@ -1,5 +1,6 @@
 import envoy
 import gleam/bit_array
+import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/erlang/charlist
 import gleam/erlang/process
@@ -14,8 +15,13 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri
+import minilab_helper/commons
 import minilab_helper/dictionaries/docker_services.{type ServiceName}
 import simplifile
+
+/// Timeout par appel Docker individuel lorsqu'ils sont parallélisés (chaque
+/// service a son propre process, donc ce n'est pas le budget total).
+const docker_call_timeout_ms = 10_000
 
 pub type DockerError {
   HttpError(String)
@@ -237,7 +243,12 @@ pub fn get_all_statuses(
   client: Client,
 ) -> Result(List(ContainerStatus), DockerError) {
   docker_services.monitored_services()
-  |> list.try_map(fn(name) { get_container_status(client, name) })
+  |> commons.parallel_map(
+    docker_call_timeout_ms,
+    fn(_name) { Error(HttpError("timeout")) },
+    fn(name) { get_container_status(client, name) },
+  )
+  |> result.all
 }
 
 // ── Ressources ───────────────────────────────────────────────────────────
@@ -269,6 +280,22 @@ pub fn get_resource_usage(
   json.parse(from: body, using: stats_decoder())
   |> result.map_error(fn(err) { DecodeError(string.inspect(err)) })
   |> result.map(compute_resource_usage)
+}
+
+/// Version parallélisée de `get_resource_usage` pour plusieurs services :
+/// chaque appel Docker `/stats` tourne dans son propre process, donc le
+/// coût total est celui du plus lent, pas la somme.
+pub fn get_all_resource_usages(
+  client: Client,
+  names: List(ServiceName),
+) -> Dict(ServiceName, Result(ResourceUsage, DockerError)) {
+  names
+  |> commons.parallel_map(
+    docker_call_timeout_ms,
+    fn(name) { #(name, Error(HttpError("timeout"))) },
+    fn(name) { #(name, get_resource_usage(client, name)) },
+  )
+  |> dict.from_list
 }
 
 fn cpu_stats_decoder() -> decode.Decoder(CpuStats) {

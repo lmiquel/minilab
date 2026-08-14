@@ -1,5 +1,35 @@
 import gleam/erlang/atom
+import gleam/erlang/process
 import gleam/int
+import gleam/list
+import gleam/result
+
+// ── Concurrence ──────────────────────────────────────────────────────────
+
+/// Applique `f` à chaque élément dans un process séparé, en parallèle, puis
+/// attend les résultats dans l'ordre d'origine. `on_timeout` reconstruit une
+/// valeur de repli à partir de l'élément d'origine, pour tout process qui
+/// n'a pas répondu sous `timeout_ms`. Utile pour les appels I/O indépendants
+/// (une requête HTTP par service par ex.) dont le coût total serait sinon la
+/// somme plutôt que le max.
+pub fn parallel_map(
+  items: List(a),
+  timeout_ms: Int,
+  on_timeout: fn(a) -> b,
+  f: fn(a) -> b,
+) -> List(b) {
+  items
+  |> list.map(fn(item) {
+    let subject = process.new_subject()
+    process.spawn_unlinked(fn() { process.send(subject, f(item)) })
+    #(item, subject)
+  })
+  |> list.map(fn(pair) {
+    let #(item, subject) = pair
+    process.receive(subject, within: timeout_ms)
+    |> result.lazy_unwrap(fn() { on_timeout(item) })
+  })
+}
 
 // ── Heure ────────────────────────────────────────────────────────────────
 
