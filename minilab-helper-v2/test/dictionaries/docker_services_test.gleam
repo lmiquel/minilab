@@ -1,8 +1,9 @@
 import gleam/list
 import minilab_helper/dictionaries/docker_services.{
-  Cloudflared, Cobblemon, Gitea, Mariadb, PingvinShare, RollerDerbyScoreboard,
-  Valheim, Wireguard, XMage, all_services, controllable_services,
-  group_by_category, service_name_from_string, service_name_to_string,
+  Cloudflared, Cobblemon, Gitea, Mariadb, PingvinShare, ProjectZomboid,
+  RollerDerbyScoreboard, Valheim, Wireguard, all_services,
+  controllable_services, group_by_category, service_name_from_string,
+  service_name_to_string,
 }
 import minilab_helper/dictionaries/service_categories.{DevTools, Game, Network}
 
@@ -23,7 +24,7 @@ pub fn only_the_seven_controllable_services_are_returned_test() {
     == [
       Valheim,
       Cobblemon,
-      XMage,
+      ProjectZomboid,
       PingvinShare,
       RollerDerbyScoreboard,
       Gitea,

@@ -67,26 +67,25 @@ services:
     labels:
       - "minilab.service=cobblemon"
 
-  xmage:
-    build:
-      context: ./xmage
-      dockerfile: Dockerfile
-    container_name: xmage
+  project-zomboid:
+    image: ghcr.io/joyfui/project-zomboid-server-docker-arm64:latest
+    container_name: project-zomboid
     environment:
       - TZ=Europe/Paris
-      - XMAGE_SERVER_NAME=${XMAGE_SERVER_NAME}
+      - SERVERNAME=${ZOMBOID_SERVER_NAME}
     volumes:
-      - /mnt/ssd/xmage:/app/db
+      - /mnt/ssd/zomboid/data:/home/steam/Zomboid
+      - /mnt/ssd/zomboid/workshop:/home/steam/pzserver/steamapps/workshop
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/17171"]
+      test: ["CMD-SHELL", "screen -list | grep -q zomboid"]
       interval: 60s
       timeout: 5s
       retries: 3
-      start_period: 120s
+      start_period: 600s
     network_mode: "service:wireguard"
     depends_on:
       wireguard:
         condition: service_healthy
     labels:
-      - "minilab.service=xmage"
+      - "minilab.service=project-zomboid"

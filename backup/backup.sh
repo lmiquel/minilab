@@ -73,7 +73,7 @@ log "── $(date) ──"
 # ── Services fichiers ────────────────────────────────────────────────────────
 backup_files valheim /mnt/ssd/valheim/worlds_local
 backup_files cobblemon /mnt/ssd/cobblemon
-backup_files xmage /mnt/ssd/xmage
+backup_files zomboid /mnt/ssd/zomboid
 backup_files gitea /mnt/ssd/gitea/data
 backup_files pingvin-data /mnt/ssd/pingvin/data
 backup_files pingvin-images /mnt/ssd/pingvin/images
