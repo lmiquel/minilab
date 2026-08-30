@@ -30,10 +30,6 @@ services:
     volumes:
       - /mnt/ssd/pihole/etc:/etc/pihole
       - /mnt/ssd/pihole/dnsmasq:/etc/dnsmasq.d
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "8080:80/tcp"
     cap_add:
       - NET_ADMIN
     restart: unless-stopped

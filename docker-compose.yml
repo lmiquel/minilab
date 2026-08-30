@@ -5,6 +5,10 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/24
+  docker-proxy:
+    name: docker-proxy
+    driver: bridge
+    internal: true
 
 include:
   - path: ./docker-compose.network.yml

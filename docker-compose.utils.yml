@@ -16,8 +16,7 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      minilab:
-        ipv4_address: 172.20.0.31
+      - docker-proxy
     labels:
       - "minilab.service=docker-socket-proxy"
 
@@ -31,8 +30,12 @@ services:
       - TZ=Europe/Paris
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - /mnt/ssd:/mnt/ssd
     restart: unless-stopped
+    networks:
+      - minilab
+    depends_on:
+      mariadb:
+        condition: service_healthy
     labels:
       - "minilab.service=backup"

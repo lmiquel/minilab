@@ -77,15 +77,10 @@ ufw allow from 10.0.0.0/8    to any port 22 proto tcp
 # WireGuard VPN (seul port exposé sur Internet avec SSH)
 ufw allow 51820/udp
 
-# Pi-hole — interface web admin (réseau local + VPN uniquement, pas Internet)
-ufw allow from 192.168.0.0/16 to any port 8080 proto tcp  # LAN classe B
-ufw allow from 10.0.0.0/8    to any port 8080 proto tcp  # VPN / LAN classe A
-ufw allow from 172.16.0.0/12 to any port 8080 proto tcp  # Docker networks
-
-# Pi-hole — DNS port 53 (réseau local + Docker uniquement)
-ufw allow from 192.168.0.0/16 to any port 53
-ufw allow from 10.0.0.0/8    to any port 53
-ufw allow from 172.16.0.0/12 to any port 53
+# Pi-hole — ne publie aucun port sur l'hôte (ni 53, ni 8080) : le DNS et
+# l'interface web ne sont joignables que par les peers VPN, via le routage
+# interne Docker (172.20.0.3), jamais par l'hôte lui-même. Rien à ouvrir
+# dans UFW pour Pi-hole.
 
 # Aucun service de jeu (Valheim, Cobblemon, Project Zomboid, RollerDerby) ne publie
 # de port hôte : ils tournent tous en network_mode: service:wireguard, donc

@@ -62,7 +62,11 @@ services:
       - /:/host/rootfs:ro
       - /mnt/ssd:/host/ssd:ro
     restart: unless-stopped
-    network_mode: "service:wireguard"
+    dns:
+      - 172.20.0.3
+    networks:
+      - minilab
+      - docker-proxy
     depends_on:
       docker-socket-proxy:
         condition: service_healthy

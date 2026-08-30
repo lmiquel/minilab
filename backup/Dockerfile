@@ -1,6 +1,6 @@
 FROM alpine:3.20
 
-RUN apk add --no-cache docker-cli dcron bash coreutils tar gzip
+RUN apk add --no-cache mariadb-client dcron bash coreutils tar gzip
 
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh \

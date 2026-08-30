@@ -80,22 +80,15 @@ backup_files pingvin-images /mnt/ssd/pingvin/images
 backup_files wireguard /mnt/ssd/wireguard/config
 backup_files duckdns /mnt/ssd/duckdns/config
 
-# ── Pi-hole : teleporter en priorité, fallback copie du dossier ─────────────
+# ── Pi-hole : copie directe du dossier de config (plus de dépendance Docker) ─
 log "pihole…"
-TMP_PIHOLE="/tmp/pihole.tar.gz"
-if docker exec pihole pihole -a -t /tmp/pihole-teleporter.tar.gz >/dev/null 2>&1 \
-  && docker cp pihole:/tmp/pihole-teleporter.tar.gz "$TMP_PIHOLE" >/dev/null 2>&1; then
-  docker exec pihole rm -f /tmp/pihole-teleporter.tar.gz >/dev/null 2>&1 || true
-  commit_backup pihole "$TMP_PIHOLE" "tar.gz"
-else
-  backup_files pihole /mnt/ssd/pihole/etc
-fi
+backup_files pihole /mnt/ssd/pihole/etc
 
 # ── MariaDB : dump SQL, jamais de copie à chaud des fichiers vivants ────────
 log "mariadb…"
 TMP_MARIADB_RAW="/tmp/mariadb.sql"
 TMP_MARIADB="/tmp/mariadb.sql.gz"
-if docker exec mariadb mariadb-dump --all-databases -uroot -p"$MARIADB_ROOT_PASSWORD" \
+if MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-dump -h mariadb --all-databases -uroot \
   >"$TMP_MARIADB_RAW" 2>/dev/null && [ -s "$TMP_MARIADB_RAW" ]; then
   gzip -c "$TMP_MARIADB_RAW" >"$TMP_MARIADB"
   commit_backup mariadb "$TMP_MARIADB" "sql.gz"
