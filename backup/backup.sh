@@ -10,15 +10,19 @@ BACKUP_ROOT="/mnt/ssd/backups"
 DATE=$(date +%Y-%m-%d_%H-%M)
 KEEP=5
 REPORT_FILE="$BACKUP_ROOT/last-run.log"
+REPORT_TMP="$REPORT_FILE.tmp"
 
 log() {
   echo "[backup] $*"
 }
 
 # Rapport structuré lu par minilab-helper-v2 pour le DM de résumé — une ligne
-# `service:statut` par cible, statut ∈ ok|skip|missing|fail.
+# `service:statut` par cible, statut ∈ ok|skip|missing|fail. Écrit dans un
+# fichier temporaire tout au long du run et déplacé (mv atomique) vers
+# REPORT_FILE seulement à la fin, pour que le bot (qui poll toutes les 5 min)
+# ne puisse jamais lire un rapport à moitié écrit.
 report() {
-  echo "$1:$2" >>"$REPORT_FILE"
+  echo "$1:$2" >>"$REPORT_TMP"
 }
 
 # Compare l'artefact temporaire au backup le plus récent du service : identique
@@ -66,7 +70,7 @@ backup_files() {
 }
 
 mkdir -p "$BACKUP_ROOT"
-date +%s >"$REPORT_FILE"
+date +%s >"$REPORT_TMP"
 
 log "── $(date) ──"
 
@@ -98,5 +102,7 @@ else
   rm -f "$TMP_MARIADB"
 fi
 rm -f "$TMP_MARIADB_RAW"
+
+mv "$REPORT_TMP" "$REPORT_FILE"
 
 log "✅ Terminé — $(date)"

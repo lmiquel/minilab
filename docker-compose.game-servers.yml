@@ -17,7 +17,7 @@ services:
       - /mnt/ssd/valheim/backups:/data/backups
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/2456"]
+      test: ["CMD", "bash", "-c", "grep -q ':0999 ' /proc/net/udp"]
       interval: 60s
       timeout: 5s
       retries: 3
