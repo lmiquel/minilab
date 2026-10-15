@@ -48,6 +48,7 @@ echo "=== 4. Création de l'arborescence ==="
 mkdir -p \
   "$MOUNT_POINT/valheim" \
   "$MOUNT_POINT/valheim/backups" \
+  "$MOUNT_POINT/valheim/server" \
   "$MOUNT_POINT/pihole/etc" \
   "$MOUNT_POINT/pihole/dnsmasq" \
   "$MOUNT_POINT/duckdns/config" \
