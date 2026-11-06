@@ -2,6 +2,7 @@ services:
   github-runner:
     image: myoung34/github-runner:ubuntu-noble
     container_name: github-runner
+    profiles: [dev-tools]
     environment:
       - TZ=Europe/Paris
       - REPO_URL=${GITHUB_RUNNER_REPO_URL}
@@ -25,6 +26,7 @@ services:
   mariadb:
     image: lscr.io/linuxserver/mariadb:latest
     container_name: mariadb
+    profiles: [dev-tools]
     environment:
       - PUID=1000
       - PGID=1000
@@ -51,6 +53,7 @@ services:
   gitea:
     image: gitea/gitea:latest
     container_name: gitea
+    profiles: [dev-tools]
     environment:
       - USER_UID=1000
       - USER_GID=1000

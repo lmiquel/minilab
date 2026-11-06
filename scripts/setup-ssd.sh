@@ -61,6 +61,7 @@ mkdir -p \
   "$MOUNT_POINT/pingvin/data" \
   "$MOUNT_POINT/pingvin/images" \
   "$MOUNT_POINT/github-runner/work" \
+  "$MOUNT_POINT/reboot" \
   "$MOUNT_POINT/backups"
 
 # Droits pour Docker (uid 1000 = utilisateur standard)

@@ -2,6 +2,7 @@ services:
   pingvin-share:
     image: smp46/pingvin-share-x:latest
     container_name: pingvin-share
+    profiles: [apps]
     environment:
       - TZ=Europe/Paris
       - BACKEND_URL=https://${PINGVIN_HOSTNAME}
@@ -27,6 +28,7 @@ services:
       context: ./rollerderby-scoreboard
       dockerfile: Dockerfile
     container_name: rollerderbyscoreboard
+    profiles: [apps]
     environment:
       - TZ=Europe/Paris
     restart: unless-stopped
@@ -42,35 +44,3 @@ services:
         condition: service_healthy
     labels:
       - "minilab.service=rollerderbyscoreboard"
-
-  minilab-helper-v2:
-    build:
-      context: ./minilab-helper-v2
-      dockerfile: Dockerfile
-    container_name: minilab-helper-v2
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN_V2}
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID_V2}
-      - DISCORD_OWNER_ID=${DISCORD_OWNER_ID}
-      - WG_PEERS=${WG_PEERS}
-      - TZ=Europe/Paris
-      - DOCKER_HOST=tcp://docker-socket-proxy:2375
-    volumes:
-      - /sys/class/thermal/thermal_zone0/temp:/sys/class/thermal/thermal_zone0/temp:ro
-      - /proc/stat:/host/stat:ro
-      - /proc/meminfo:/host/meminfo:ro
-      - /:/host/rootfs:ro
-      - /mnt/ssd:/host/ssd:ro
-    restart: unless-stopped
-    dns:
-      - 172.20.0.3
-    networks:
-      - minilab
-      - docker-proxy
-    depends_on:
-      docker-socket-proxy:
-        condition: service_healthy
-      wireguard:
-        condition: service_healthy
-    labels:
-      - "minilab.service=minilab-helper-v2"

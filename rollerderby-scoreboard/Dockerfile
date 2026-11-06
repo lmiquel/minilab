@@ -1,12 +1,19 @@
 FROM eclipse-temurin:17-jdk AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends ant git \
+RUN apt-get update && apt-get install -y --no-install-recommends ant git curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-ARG SCOREBOARD_VERSION=v2027.0
-RUN git clone --depth 1 --branch ${SCOREBOARD_VERSION} \
+ADD https://github.com/rollerderby/scoreboard/releases.atom /tmp/releases.atom
+
+ARG SCOREBOARD_VERSION=latest
+RUN if [ "$SCOREBOARD_VERSION" = latest ]; then \
+      url=$(curl -fsSLo /dev/null -w '%{url_effective}' https://github.com/rollerderby/scoreboard/releases/latest) \
+      && SCOREBOARD_VERSION=${url##*/}; \
+    fi \
+    && echo "Scoreboard : $SCOREBOARD_VERSION" \
+    && git clone --depth 1 --branch "$SCOREBOARD_VERSION" \
     https://github.com/rollerderby/scoreboard.git .
 
 RUN ant compile

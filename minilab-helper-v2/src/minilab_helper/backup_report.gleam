@@ -14,6 +14,12 @@ import simplifile
 
 const report_path = "/host/ssd/backups/last-run.log"
 
+const reboot_pending_path = "/host/ssd/reboot/pending"
+
+const host_stat_path = "/host/stat"
+
+const max_hold_seconds = 21_600
+
 const poll_interval_ms = 300_000
 
 pub type BackupStatus {
@@ -117,7 +123,8 @@ fn status_from_string(status: String) -> Result(BackupStatus, Nil) {
 
 /// Si un nouveau rapport est apparu depuis la dernière vérification (horodatage
 /// différent de celui vu au tour précédent), envoie un DM récapitulatif et met
-/// à jour l'horodatage vu — sinon ne fait rien.
+/// à jour l'horodatage vu — sinon ne fait rien. Pendant un reboot mensuel, le
+/// rapport est retenu pour partir une fois le Pi redémarré et à jour.
 fn check_for_new_report(
   last_seen: booklet.Booklet(Option(Int)),
   bot: bot.Bot,
@@ -125,26 +132,82 @@ fn check_for_new_report(
 ) -> Nil {
   case read_report() {
     Error(Nil) -> Nil
-    Ok(report) ->
-      case booklet.get(last_seen) == Some(report.timestamp) {
+    Ok(report) -> {
+      let now = commons.now()
+      case
+        booklet.get(last_seen) == Some(report.timestamp) || reboot_pending(now)
+      {
         True -> Nil
         False -> {
           booklet.set(last_seen, Some(report.timestamp))
-          monitoring.dm(bot, owner_id, format_report(report))
+          monitoring.dm(
+            bot,
+            owner_id,
+            format_report(report, read_boot_time(), now),
+          )
         }
       }
+    }
   }
 }
 
-fn format_report(report: BackupReport) -> String {
+fn reboot_pending(now: Int) -> Bool {
+  case simplifile.read(from: reboot_pending_path) {
+    Ok(raw) -> is_reboot_pending(raw, now)
+    Error(_) -> False
+  }
+}
+
+/// Le conteneur reboot écrit l'horodatage du reboot prévu dans ce fichier,
+/// scripts/boot-update.sh le supprime une fois tout redémarré. Passé
+/// max_hold_seconds, on considère que quelque chose a échoué et on n'attend plus.
+pub fn is_reboot_pending(raw: String, now: Int) -> Bool {
+  case int.parse(string.trim(raw)) {
+    Ok(scheduled_at) -> now - scheduled_at < max_hold_seconds
+    Error(Nil) -> False
+  }
+}
+
+fn read_boot_time() -> Result(Int, Nil) {
+  simplifile.read(from: host_stat_path)
+  |> result.replace_error(Nil)
+  |> result.try(parse_boot_time)
+}
+
+pub fn parse_boot_time(raw: String) -> Result(Int, Nil) {
+  string.split(raw, "\n")
+  |> list.find_map(fn(line) {
+    case string.split(line, " ") {
+      ["btime", value] -> int.parse(value)
+      _ -> Error(Nil)
+    }
+  })
+}
+
+pub fn format_report(
+  report: BackupReport,
+  last_boot: Result(Int, Nil),
+  sent_at: Int,
+) -> String {
   let lines =
     list.map(report.entries, fn(entry) {
       status_emoji(entry.status) <> " " <> format_name(entry.name)
     })
 
-  "💾 **Rapport de backup — "
-  <> format_date_fr(report.timestamp)
+  let boot = case last_boot {
+    Ok(timestamp) -> format_date_fr(timestamp)
+    Error(Nil) -> "inconnu"
+  }
+
+  "🛠️ **Rapport de maintenance — "
+  <> format_date_fr(sent_at)
   <> "**\n"
+  <> "🔄 Dernier reboot : "
+  <> boot
+  <> "\n"
+  <> "💾 Backup — "
+  <> format_date_fr(report.timestamp)
+  <> "\n"
   <> string.join(lines, "\n")
 }
 

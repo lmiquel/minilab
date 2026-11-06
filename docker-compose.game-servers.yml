@@ -2,6 +2,7 @@ services:
   valheim:
     image: tsxcloud/valheim-arm:arm64
     container_name: valheim
+    profiles: [game-servers]
     cap_add:
       - sys_nice
     environment:
@@ -33,6 +34,7 @@ services:
   cobblemon:
     image: itzg/minecraft-server:java21
     container_name: cobblemon
+    profiles: [game-servers]
     tty: true
     stdin_open: true
     environment:
@@ -71,6 +73,7 @@ services:
   project-zomboid:
     image: ghcr.io/joyfui/project-zomboid-server-docker-arm64:latest
     container_name: project-zomboid
+    profiles: [game-servers]
     environment:
       - TZ=Europe/Paris
       - SERVERNAME=${ZOMBOID_SERVER_NAME}

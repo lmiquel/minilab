@@ -1,6 +1,6 @@
 import gleam/list
 import minilab_helper/dictionaries/service_categories.{
-  type ServiceCategory, Apps, DevTools, Game, Network, Utils,
+  type ServiceCategory, Apps, DevTools, Game, Interface, Network, Utils,
 }
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ pub type ServiceName {
   Cloudflared
   Duckdns
   Backup
+  Reboot
 }
 
 pub type ServiceDefinition {
@@ -69,7 +70,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
         "minilab-helper-v2",
         "Minilab Helper",
         "🤖",
-        Apps,
+        Interface,
         False,
         True,
       ),
@@ -114,6 +115,10 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
       ServiceDefinition("duckdns", "DuckDNS", "🦆", Network, False, True),
     ),
     #(Backup, ServiceDefinition("backup", "Backup", "💾", Utils, False, True)),
+    #(
+      Reboot,
+      ServiceDefinition("reboot", "Reboot mensuel", "🔄", Utils, False, True),
+    ),
   ]
 }
 
@@ -139,6 +144,7 @@ pub fn service_name_to_string(name: ServiceName) -> String {
     Cloudflared -> "cloudflared"
     Duckdns -> "duckdns"
     Backup -> "backup"
+    Reboot -> "reboot"
   }
 }
 
@@ -159,6 +165,7 @@ pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
     "cloudflared" -> Ok(Cloudflared)
     "duckdns" -> Ok(Duckdns)
     "backup" -> Ok(Backup)
+    "reboot" -> Ok(Reboot)
     _ -> Error(Nil)
   }
 }

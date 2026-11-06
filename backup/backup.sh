@@ -92,12 +92,16 @@ backup_files pihole /mnt/ssd/pihole/etc
 log "mariadb…"
 TMP_MARIADB_RAW="/tmp/mariadb.sql"
 TMP_MARIADB="/tmp/mariadb.sql.gz"
-if MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-dump -h mariadb --all-databases -uroot \
+
+if ! timeout 5 bash -c '>/dev/tcp/mariadb/3306' 2>/dev/null; then
+  log "mariadb : conteneur arrêté, ignoré"
+  report mariadb "missing"
+elif MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-dump -h mariadb --all-databases -uroot \
   >"$TMP_MARIADB_RAW" 2>/dev/null && [ -s "$TMP_MARIADB_RAW" ]; then
   gzip -c "$TMP_MARIADB_RAW" >"$TMP_MARIADB"
   commit_backup mariadb "$TMP_MARIADB" "sql.gz"
 else
-  log "mariadb : échec du dump (conteneur arrêté ?)"
+  log "mariadb : échec du dump"
   report mariadb "fail"
   rm -f "$TMP_MARIADB"
 fi
