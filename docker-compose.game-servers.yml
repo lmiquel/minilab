@@ -17,6 +17,7 @@ services:
       - /mnt/ssd/valheim:/root/.config/unity3d/IronGate/Valheim
       - /mnt/ssd/valheim/backups:/data/backups
       - /mnt/ssd/valheim/server:/root/valheim-server
+      - ./valheim/entrypoint.sh:/root/entrypoint.sh:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bash", "-c", "grep -q ':0999 ' /proc/net/udp"]
