@@ -1,102 +1,21 @@
-import discord_gleam/types/embed.{type Embed}
-import gleam/dict
+import discord_gleam/types/embed
 import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/result
 import gleam/string
 import minilab_helper/commons.{format_date_fr}
-import minilab_helper/dictionaries/docker_services.{
-  type ServiceName, monitored_services,
-}
-import minilab_helper/dictionaries/service_categories
-import minilab_helper/docker.{type ContainerStatus, type DockerError}
 import minilab_helper/miniprint.{
   type KlippyState, type MiniPrintOverview, KlippyError, Ready, Shutdown,
   Startup,
 }
 import minilab_helper/wireguard.{type ConnectedPeer, type PeerInfo}
 
-const color_blurple = 0x5865F2
-
 const color_green = 0x57F287
 
 const color_orange = 0xE67E22
 
 const color_grey = 0x95A5A6
-
-// ── /status ──────────────────────────────────────────────────────────────
-
-pub fn build_status_embed(
-  client: docker.Client,
-) -> Result(embed.Embed, DockerError) {
-  use statuses <- result.try(docker.get_all_statuses(client))
-
-  let base =
-    embed.new(
-      title: "📊 Statut du minilab",
-      description: "",
-      color: color_blurple,
-    )
-
-  let with_fields =
-    add_grouped_service_fields(base, monitored_services(), fn(service) {
-      status_field_value(statuses, service)
-    })
-
-  Ok(with_fields)
-}
-
-fn status_field_value(statuses: List(ContainerStatus), service) {
-  case list.find(statuses, fn(status) { status.name == service }) {
-    Error(Nil) -> None
-    Ok(status) ->
-      Some(
-        render_container_state_line(status)
-        <> "  •  🔁 "
-        <> int.to_string(status.restart_count),
-      )
-  }
-}
-
-// ── /resources ───────────────────────────────────────────────────────────
-
-pub fn build_resources_embed(client: docker.Client) -> embed.Embed {
-  let description = case docker.get_rpi_temperature() {
-    Ok(temp) ->
-      "🌡️ Température RPi : "
-      <> temp_emoji(temp)
-      <> " **"
-      <> int.to_string(temp)
-      <> "°C**"
-    Error(_) -> "🌡️ Température RPi : ❌ indisponible"
-  }
-
-  let base =
-    embed.new(
-      title: "📈 Ressources CPU / RAM — minilab",
-      description: description,
-      color: color_green,
-    )
-
-  let usages = docker.get_all_resource_usages(client, monitored_services())
-
-  add_grouped_service_fields(base, monitored_services(), fn(service) {
-    let value = case dict.get(usages, service) {
-      Ok(Ok(usage)) ->
-        "CPU : `"
-        <> float.to_string(usage.cpu_percent)
-        <> "%`\nRAM : `"
-        <> int.to_string(usage.mem_usage_mb)
-        <> "MB ("
-        <> float.to_string(usage.mem_percent)
-        <> "%)`"
-      _ -> "❌ Stats indisponibles\n(conteneur arrêté ?)"
-    }
-    Some(value)
-  })
-}
 
 // ── /vpn ─────────────────────────────────────────────────────────────────
 
@@ -299,103 +218,6 @@ fn miniprint_peer_line(peer: Option(PeerInfo)) -> String {
 
 // ── /overview ────────────────────────────────────────────────────────────
 
-pub fn build_overview_status_resources_embed(
-  client: docker.Client,
-) -> Result(embed.Embed, DockerError) {
-  use statuses <- result.try(docker.get_all_statuses(client))
-
-  let temp_str = case docker.get_rpi_temperature() {
-    Ok(temp) -> temp_emoji(temp) <> " **" <> int.to_string(temp) <> "°C**"
-    Error(_) -> "❌ indisponible"
-  }
-
-  let host_str = case docker.get_host_resources() {
-    Ok(host) ->
-      "CPU : `"
-      <> float.to_string(host.cpu_percent)
-      <> "%`  •  RAM : `"
-      <> int.to_string(host.mem_used_mb)
-      <> "/"
-      <> int.to_string(host.mem_total_mb)
-      <> " MB ("
-      <> float.to_string(host.mem_percent)
-      <> "%)`"
-    Error(_) -> "❌ indisponible"
-  }
-
-  let storage_str = case docker.get_storage_usage() {
-    Ok(storage) ->
-      "💾 SD : `"
-      <> float.to_string(storage.sd.used_gb)
-      <> "/"
-      <> float.to_string(storage.sd.total_gb)
-      <> " GB ("
-      <> float.to_string(storage.sd.percent)
-      <> "%)`  •  SSD : `"
-      <> float.to_string(storage.ssd.used_gb)
-      <> "/"
-      <> float.to_string(storage.ssd.total_gb)
-      <> " GB ("
-      <> float.to_string(storage.ssd.percent)
-      <> "%)`"
-    Error(_) -> "❌ indisponible"
-  }
-
-  let base =
-    embed.new(
-      title: "📊 Overview — Statut & Ressources",
-      description: "🌡️ Température : "
-        <> temp_str
-        <> "\n🖥️ "
-        <> host_str
-        <> "\n"
-        <> storage_str,
-      color: color_blurple,
-    )
-
-  let running_services =
-    statuses
-    |> list.filter(fn(status) { status.state == "running" })
-    |> list.map(fn(status) { status.name })
-
-  let usages = docker.get_all_resource_usages(client, running_services)
-
-  let with_fields =
-    add_grouped_service_fields(base, monitored_services(), fn(service) {
-      overview_field_value(usages, statuses, service)
-    })
-
-  Ok(with_fields)
-}
-
-fn overview_field_value(
-  usages: dict.Dict(ServiceName, Result(docker.ResourceUsage, DockerError)),
-  statuses: List(ContainerStatus),
-  service,
-) {
-  case list.find(statuses, fn(status) { status.name == service }) {
-    Error(Nil) -> None
-    Ok(status) -> {
-      let state_part =
-        render_container_state_line(status)
-        <> "  •  🔁 "
-        <> int.to_string(status.restart_count)
-
-      let res_part = case dict.get(usages, service) {
-        Ok(Ok(usage)) ->
-          "\nCPU `"
-          <> float.to_string(usage.cpu_percent)
-          <> "%` \nRAM `"
-          <> int.to_string(usage.mem_usage_mb)
-          <> "MB`"
-        _ -> ""
-      }
-
-      Some(state_part <> res_part)
-    }
-  }
-}
-
 pub fn build_overview_vpn_embed(peers: List(PeerInfo)) -> embed.Embed {
   case peers {
     [] ->
@@ -446,17 +268,6 @@ pub fn build_overview_vpn_embed(peers: List(PeerInfo)) -> embed.Embed {
 
 // ── Rendu (helpers colocalisés depuis l'ancien commands/private.gleam) ────
 
-pub fn temp_emoji(celsius: Int) -> String {
-  case celsius >= 70 {
-    True -> "🔴"
-    False ->
-      case celsius >= 60 {
-        True -> "🟡"
-        False -> "🟢"
-      }
-  }
-}
-
 pub fn temp_emoji_float(celsius: Float) -> String {
   case celsius >=. 70.0 {
     True -> "🔴"
@@ -491,59 +302,4 @@ pub fn format_uptime(total_seconds: Int) -> String {
         False -> int.to_string(minutes) <> "min"
       }
   }
-}
-
-fn render_container_state_line(status: ContainerStatus) -> String {
-  let is_running = status.state == "running"
-  let has_health = status.health != docker.NoHealthcheck
-
-  case has_health && is_running {
-    True ->
-      docker.health_emoji(status.health)
-      <> " `"
-      <> docker.health_status_to_string(status.health)
-      <> "`"
-
-    False -> {
-      let dot = case is_running {
-        True -> "🟢"
-        False -> "🔴"
-      }
-      dot <> " `" <> status.state <> "`"
-    }
-  }
-}
-
-fn add_grouped_service_fields(
-  embed: Embed,
-  services: List(ServiceName),
-  build_value: fn(ServiceName) -> Option(String),
-) -> Embed {
-  docker_services.group_by_category(services)
-  |> list.fold(embed, fn(embed, pair) {
-    let #(category, services_in_category) = pair
-
-    let embed =
-      embed.add_field(
-        embed,
-        name: "​",
-        value: "**" <> service_categories.category_label(category) <> "**",
-        inline: False,
-      )
-
-    list.fold(services_in_category, embed, fn(embed, service) {
-      case build_value(service) {
-        None -> embed
-        Some(value) -> {
-          let definition = docker_services.get_service(service)
-          embed.add_field(
-            embed,
-            name: definition.emoji <> " " <> definition.label,
-            value: value,
-            inline: True,
-          )
-        }
-      }
-    })
-  })
 }

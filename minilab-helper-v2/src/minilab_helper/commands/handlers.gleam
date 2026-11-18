@@ -11,9 +11,9 @@ import gleam/erlang/charlist
 import gleam/erlang/process
 import gleam/list
 import gleam/option
-import gleam/string
 import logging
 import minilab_helper/commands/embed_views
+import minilab_helper/commands/views
 import minilab_helper/dictionaries/docker_services.{
   type ServiceName, all_services, get_service, service_name_from_string,
 }
@@ -31,13 +31,7 @@ pub fn handle_status(
 ) -> Nil {
   let _ = interaction.defer_response(pkt, ephemeral: True)
 
-  let reply = case embed_views.build_status_embed(client) {
-    Ok(embed) -> message.new("") |> message.add_embed(embed)
-    Error(_) ->
-      message.new(
-        "❌ Une erreur est survenue lors de l'exécution de la commande.",
-      )
-  }
+  let reply = message.new(views.build_status_message(client))
 
   let _ = interaction.edit_response(pkt, message: reply)
   Nil
@@ -51,8 +45,7 @@ pub fn handle_resources(
 ) -> Nil {
   let _ = interaction.defer_response(pkt, ephemeral: True)
 
-  let embed = embed_views.build_resources_embed(client)
-  let reply = message.new("") |> message.add_embed(embed)
+  let reply = message.new(views.build_resources_message(client))
 
   let _ = interaction.edit_response(pkt, message: reply)
   Nil
@@ -115,10 +108,7 @@ pub fn handle_overview(
 
   let status_subj = process.new_subject()
   process.spawn_unlinked(fn() {
-    process.send(
-      status_subj,
-      embed_views.build_overview_status_resources_embed(client),
-    )
+    process.send(status_subj, views.build_overview_message(client))
   })
 
   let miniprint_subj = process.new_subject()
@@ -145,7 +135,7 @@ pub fn handle_overview(
     Error(Nil) -> {
       logging.log(
         logging.Error,
-        "[Overview] Timeout en attendant l'embed statut/ressources",
+        "[Overview] Timeout en attendant le message statut/ressources",
       )
       let _ =
         interaction.edit_response(
@@ -157,25 +147,9 @@ pub fn handle_overview(
       Nil
     }
 
-    Ok(Error(err)) -> {
-      logging.log(
-        logging.Error,
-        "[Overview] Erreur statut/ressources : " <> string.inspect(err),
-      )
-      let _ =
-        interaction.edit_response(
-          pkt,
-          message: message.new(
-            "❌ Une erreur est survenue lors de l'exécution de la commande.",
-          ),
-        )
-      Nil
-    }
-
-    Ok(Ok(status_embed)) -> {
+    Ok(content) -> {
       let reply =
-        message.new("")
-        |> message.add_embed(status_embed)
+        message.new(content)
         |> message.add_embed(vpn_embed)
 
       let reply = case miniprint_embed_result {

@@ -239,15 +239,22 @@ fn health_from_string(status: String) -> HealthStatus {
   }
 }
 
-pub fn get_all_statuses(
+pub fn get_status_results(
   client: Client,
-) -> Result(List(ContainerStatus), DockerError) {
+) -> List(#(ServiceName, Result(ContainerStatus, DockerError))) {
   docker_services.monitored_services()
   |> commons.parallel_map(
     docker_call_timeout_ms,
-    fn(_name) { Error(HttpError("timeout")) },
-    fn(name) { get_container_status(client, name) },
+    fn(name) { #(name, Error(HttpError("timeout"))) },
+    fn(name) { #(name, get_container_status(client, name)) },
   )
+}
+
+pub fn get_all_statuses(
+  client: Client,
+) -> Result(List(ContainerStatus), DockerError) {
+  get_status_results(client)
+  |> list.map(fn(pair) { pair.1 })
   |> result.all
 }
 
