@@ -20,6 +20,32 @@ services:
     labels:
       - "minilab.service=docker-socket-proxy"
 
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: mariadb
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=gitea
+      - MYSQL_USER=gitea
+      - MYSQL_PASSWORD=${GITEA_DB_PASSWORD}
+    volumes:
+      - /mnt/ssd/mariadb/config:/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3306"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      minilab:
+        ipv4_address: 172.20.0.40
+    labels:
+      - "minilab.service=mariadb"
+
   backup:
     build:
       context: ./backup

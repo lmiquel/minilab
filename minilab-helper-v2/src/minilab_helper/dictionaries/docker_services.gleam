@@ -1,6 +1,6 @@
 import gleam/list
 import minilab_helper/dictionaries/service_categories.{
-  type ServiceCategory, Apps, DevTools, Game, Interface, Network, Utils,
+  type ServiceCategory, Apps, DevTools, Game, Interface, Network, Utils, WebApps,
 }
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -11,6 +11,9 @@ pub type ServiceName {
   ProjectZomboid
   PingvinShare
   RollerDerbyScoreboard
+  Jellyfin
+  Nextcloud
+  Vaultwarden
   Gitea
   MinilabHelper
   DockerSocketProxy
@@ -19,6 +22,7 @@ pub type ServiceName {
   Wireguard
   Pihole
   Cloudflared
+  Swag
   Duckdns
   Backup
   Reboot
@@ -46,11 +50,25 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
     ),
     #(
       ProjectZomboid,
-      ServiceDefinition("project-zomboid", "Project Zomboid", "🧟", Game, True, True),
+      ServiceDefinition(
+        "project-zomboid",
+        "Project Zomboid",
+        "🧟",
+        Game,
+        True,
+        True,
+      ),
     ),
     #(
       PingvinShare,
-      ServiceDefinition("pingvin-share", "Pingvin Share", "🐧", Apps, True, True),
+      ServiceDefinition(
+        "pingvin-share",
+        "Pingvin Share",
+        "🐧",
+        WebApps,
+        False,
+        True,
+      ),
     ),
     #(
       RollerDerbyScoreboard,
@@ -62,6 +80,18 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
         True,
         True,
       ),
+    ),
+    #(
+      Jellyfin,
+      ServiceDefinition("jellyfin", "Jellyfin", "🪼", Apps, True, True),
+    ),
+    #(
+      Nextcloud,
+      ServiceDefinition("nextcloud", "Nextcloud", "📁", WebApps, False, True),
+    ),
+    #(
+      Vaultwarden,
+      ServiceDefinition("vaultwarden", "Vaultwarden", "🔐", WebApps, False, True),
     ),
     #(Gitea, ServiceDefinition("gitea", "Gitea", "🍵", DevTools, True, True)),
     #(
@@ -97,10 +127,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
         True,
       ),
     ),
-    #(
-      Mariadb,
-      ServiceDefinition("mariadb", "MariaDB", "🦭", DevTools, True, True),
-    ),
+    #(Mariadb, ServiceDefinition("mariadb", "MariaDB", "🦭", Utils, False, True)),
     #(
       Wireguard,
       ServiceDefinition("wireguard", "WireGuard", "🔒", Network, False, True),
@@ -110,6 +137,7 @@ pub fn services() -> List(#(ServiceName, ServiceDefinition)) {
       Cloudflared,
       ServiceDefinition("cloudflared", "Cloudflared", "☁️", Network, False, True),
     ),
+    #(Swag, ServiceDefinition("swag", "SWAG", "🔀", Network, False, True)),
     #(
       Duckdns,
       ServiceDefinition("duckdns", "DuckDNS", "🦆", Network, False, True),
@@ -134,6 +162,9 @@ pub fn service_name_to_string(name: ServiceName) -> String {
     ProjectZomboid -> "projectzomboid"
     PingvinShare -> "pingvinshare"
     RollerDerbyScoreboard -> "rollerderbyscoreboard"
+    Jellyfin -> "jellyfin"
+    Nextcloud -> "nextcloud"
+    Vaultwarden -> "vaultwarden"
     Gitea -> "gitea"
     MinilabHelper -> "minilabhelper"
     DockerSocketProxy -> "dockersocketproxy"
@@ -142,6 +173,7 @@ pub fn service_name_to_string(name: ServiceName) -> String {
     Wireguard -> "wireguard"
     Pihole -> "pihole"
     Cloudflared -> "cloudflared"
+    Swag -> "swag"
     Duckdns -> "duckdns"
     Backup -> "backup"
     Reboot -> "reboot"
@@ -155,6 +187,9 @@ pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
     "projectzomboid" -> Ok(ProjectZomboid)
     "pingvinshare" -> Ok(PingvinShare)
     "rollerderbyscoreboard" -> Ok(RollerDerbyScoreboard)
+    "jellyfin" -> Ok(Jellyfin)
+    "nextcloud" -> Ok(Nextcloud)
+    "vaultwarden" -> Ok(Vaultwarden)
     "gitea" -> Ok(Gitea)
     "minilabhelper" -> Ok(MinilabHelper)
     "dockersocketproxy" -> Ok(DockerSocketProxy)
@@ -163,6 +198,7 @@ pub fn service_name_from_string(value: String) -> Result(ServiceName, Nil) {
     "wireguard" -> Ok(Wireguard)
     "pihole" -> Ok(Pihole)
     "cloudflared" -> Ok(Cloudflared)
+    "swag" -> Ok(Swag)
     "duckdns" -> Ok(Duckdns)
     "backup" -> Ok(Backup)
     "reboot" -> Ok(Reboot)

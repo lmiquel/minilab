@@ -61,6 +61,12 @@ mkdir -p \
   "$MOUNT_POINT/pingvin/data" \
   "$MOUNT_POINT/pingvin/images" \
   "$MOUNT_POINT/github-runner/work" \
+  "$MOUNT_POINT/swag/config" \
+  "$MOUNT_POINT/nextcloud/config" \
+  "$MOUNT_POINT/nextcloud/data" \
+  "$MOUNT_POINT/vaultwarden/data" \
+  "$MOUNT_POINT/jellyfin/config" \
+  "$MOUNT_POINT/jellyfin/cache" \
   "$MOUNT_POINT/reboot" \
   "$MOUNT_POINT/backups"
 

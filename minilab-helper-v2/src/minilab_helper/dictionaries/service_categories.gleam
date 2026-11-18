@@ -1,6 +1,7 @@
 pub type ServiceCategory {
   Game
   Apps
+  WebApps
   DevTools
   Interface
   Utils
@@ -11,6 +12,7 @@ pub fn category_label(category: ServiceCategory) -> String {
   case category {
     Game -> "🎮 Jeux"
     Apps -> "📦 Apps"
+    WebApps -> "💻 Web Apps"
     DevTools -> "🛠️ Dev Tools"
     Interface -> "🖥️ Interface"
     Utils -> "🔧 Utilitaires"
@@ -19,5 +21,5 @@ pub fn category_label(category: ServiceCategory) -> String {
 }
 
 pub fn category_order() -> List(ServiceCategory) {
-  [Game, Apps, DevTools, Interface, Utils, Network]
+  [Game, Apps, WebApps, DevTools, Interface, Utils, Network]
 }

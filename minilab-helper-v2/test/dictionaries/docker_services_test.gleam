@@ -1,11 +1,10 @@
 import gleam/list
 import minilab_helper/dictionaries/docker_services.{
-  Cloudflared, Cobblemon, Gitea, Mariadb, PingvinShare, ProjectZomboid,
-  RollerDerbyScoreboard, Valheim, Wireguard, all_services,
-  controllable_services, group_by_category, service_name_from_string,
-  service_name_to_string,
+  Cloudflared, Cobblemon, Gitea, Jellyfin, Mariadb, ProjectZomboid,
+  RollerDerbyScoreboard, Valheim, Wireguard, all_services, controllable_services,
+  group_by_category, service_name_from_string, service_name_to_string,
 }
-import minilab_helper/dictionaries/service_categories.{DevTools, Game, Network}
+import minilab_helper/dictionaries/service_categories.{Game, Network, Utils}
 
 pub fn service_name_round_trips_for_every_service_test() {
   list.each(all_services(), fn(name) {
@@ -19,16 +18,15 @@ pub fn service_name_from_string_rejects_unknown_values_test() {
   assert service_name_from_string("not-a-real-service") == Error(Nil)
 }
 
-pub fn only_the_seven_controllable_services_are_returned_test() {
+pub fn only_the_six_controllable_services_are_returned_test() {
   assert controllable_services()
     == [
       Valheim,
       Cobblemon,
       ProjectZomboid,
-      PingvinShare,
       RollerDerbyScoreboard,
+      Jellyfin,
       Gitea,
-      Mariadb,
     ]
 }
 
@@ -60,5 +58,5 @@ pub fn mixed_categories_are_all_grouped_test() {
   let grouped = group_by_category([Mariadb, Wireguard, Valheim])
 
   assert grouped
-    == [#(Game, [Valheim]), #(DevTools, [Mariadb]), #(Network, [Wireguard])]
+    == [#(Game, [Valheim]), #(Utils, [Mariadb]), #(Network, [Wireguard])]
 }

@@ -82,7 +82,7 @@ ufw allow 51820/udp
 # interne Docker (172.20.0.3), jamais par l'hôte lui-même. Rien à ouvrir
 # dans UFW pour Pi-hole.
 
-# Aucun service de jeu (Valheim, Cobblemon, Project Zomboid, RollerDerby) ne publie
+# Aucun service de jeu (Valheim, Cobblemon, Project Zomboid) ne publie
 # de port hôte : ils tournent tous en network_mode: service:wireguard, donc
 # rien à ouvrir dans UFW pour eux — les joueurs passent obligatoirement par
 # le tunnel WireGuard.

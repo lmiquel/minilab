@@ -9,6 +9,7 @@
 BACKUP_ROOT="/mnt/ssd/backups"
 DATE=$(date +%Y-%m-%d_%H-%M)
 KEEP=5
+TMP_DIR="$BACKUP_ROOT/.tmp"
 REPORT_FILE="$BACKUP_ROOT/last-run.log"
 REPORT_TMP="$REPORT_FILE.tmp"
 
@@ -27,9 +28,9 @@ report() {
 
 # Compare l'artefact temporaire au backup le plus récent du service : identique
 # → on jette le temp (rien n'a changé), sinon on l'archive et on ne garde que
-# les $KEEP plus récents.
+# les $keep plus récents ($KEEP par défaut).
 commit_backup() {
-  local service="$1" tmp_file="$2" ext="$3"
+  local service="$1" tmp_file="$2" ext="$3" keep="${4:-$KEEP}"
   local dest_dir="$BACKUP_ROOT/$service"
   mkdir -p "$dest_dir"
 
@@ -47,18 +48,18 @@ commit_backup() {
   log "$service : nouvelle backup -> $dest_dir/$DATE.$ext"
   report "$service" "ok"
 
-  ls -1t "$dest_dir"/*."$ext" 2>/dev/null | tail -n +$((KEEP + 1)) | xargs -r rm --
+  ls -1t "$dest_dir"/*."$ext" 2>/dev/null | tail -n +$((keep + 1)) | xargs -r rm --
 }
 
 backup_files() {
-  local service="$1" src="$2"
+  local service="$1" src="$2" keep="${3:-$KEEP}"
   if [ ! -d "$src" ]; then
     log "$service : $src introuvable, ignoré"
     report "$service" "missing"
     return
   fi
 
-  local tmp="/tmp/$service.tar.gz"
+  local tmp="$TMP_DIR/$service.tar.gz"
   if ! tar czf "$tmp" -C "$(dirname "$src")" "$(basename "$src")" 2>/dev/null; then
     log "$service : échec de l'archivage"
     report "$service" "fail"
@@ -66,10 +67,10 @@ backup_files() {
     return
   fi
 
-  commit_backup "$service" "$tmp" "tar.gz"
+  commit_backup "$service" "$tmp" "tar.gz" "$keep"
 }
 
-mkdir -p "$BACKUP_ROOT"
+mkdir -p "$BACKUP_ROOT" "$TMP_DIR"
 date +%s >"$REPORT_TMP"
 
 log "── $(date) ──"
@@ -83,6 +84,11 @@ backup_files pingvin-data /mnt/ssd/pingvin/data
 backup_files pingvin-images /mnt/ssd/pingvin/images
 backup_files wireguard /mnt/ssd/wireguard/config
 backup_files duckdns /mnt/ssd/duckdns/config
+backup_files swag /mnt/ssd/swag/config
+backup_files nextcloud-config /mnt/ssd/nextcloud/config
+backup_files nextcloud-data /mnt/ssd/nextcloud/data 1
+backup_files vaultwarden /mnt/ssd/vaultwarden/data
+backup_files jellyfin /mnt/ssd/jellyfin/config
 
 # ── Pi-hole : copie directe du dossier de config (plus de dépendance Docker) ─
 log "pihole…"
@@ -90,8 +96,8 @@ backup_files pihole /mnt/ssd/pihole/etc
 
 # ── MariaDB : dump SQL, jamais de copie à chaud des fichiers vivants ────────
 log "mariadb…"
-TMP_MARIADB_RAW="/tmp/mariadb.sql"
-TMP_MARIADB="/tmp/mariadb.sql.gz"
+TMP_MARIADB_RAW="$TMP_DIR/mariadb.sql"
+TMP_MARIADB="$TMP_DIR/mariadb.sql.gz"
 
 if ! timeout 5 bash -c '>/dev/tcp/mariadb/3306' 2>/dev/null; then
   log "mariadb : conteneur arrêté, ignoré"
